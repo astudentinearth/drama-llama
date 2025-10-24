@@ -160,7 +160,7 @@ class QuizQuestion(BaseModel):
     """A quiz question."""
     question_type: str
     question: str
-    options: Optional[List[str]]  # For multiple choice
+    options: Optional[List[QuizOption]]  # For multiple choice
     correct_answer: str
     explanation: str
 
