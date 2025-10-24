@@ -20,6 +20,5 @@ class YamlParser:
 
     def get_values(self) -> list[Any]:
         return list(self.data.values())
-        return list(self.data.values())
 
     
