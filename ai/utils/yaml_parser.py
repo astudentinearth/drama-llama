@@ -14,8 +14,6 @@ class YamlParser:
 
     def get_keys(self) -> list[str]:
         return list(self.data.keys())
-    def get_key(self, key: str) -> Any:
-        return self.data[key]
 
     def get_value(self, key: str) -> Any:
         return self.data[key]
