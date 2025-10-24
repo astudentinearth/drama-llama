@@ -32,7 +32,7 @@ messages:
       # About End Of Roadmap Project
       - The End Of Roadmap project is designed to help users prepare for their desired job roles by providing
       a task to implement what user learned from all the goal topics, the ending/resulting project of the whole roadmap.
-      - It should have a mid-level difficulty, both challanging while keeping the simpler implementing style.
+      - It should have a mid-level difficulty, both challenging while keeping the simpler implementing style.
       - It should contain all the goal topics in one project.
 
   - role: "user"
