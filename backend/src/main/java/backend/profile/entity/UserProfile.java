@@ -5,6 +5,7 @@ import jakarta.persistence.*;
 import lombok.*;
 
 import java.util.List;
+import java.util.UUID;
 
 @Entity
 @Table(name = "user_profile")
@@ -14,7 +15,11 @@ import java.util.List;
 @AllArgsConstructor
 @NoArgsConstructor
 public class UserProfile {
+
     @Id
+    private UUID id;
+
+    @MapsId
     @OneToOne
     @JoinColumn(name = "user_id", referencedColumnName = "id")
     private User user;

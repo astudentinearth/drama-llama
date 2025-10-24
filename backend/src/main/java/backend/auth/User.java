@@ -31,4 +31,12 @@ public class User {
     @Column
     @CreationTimestamp
     private Instant createdAt;
+
+    public boolean is(User user) {
+        return this.id.equals(user.getId());
+    }
+
+    public boolean is(UUID userId) {
+        return this.id.equals(userId);
+    }
 }
