@@ -32,8 +32,6 @@ def test_load_prompt_with_variables():
     assert "Test content here" in all_content, "content value not found"
     assert "Previous message 1" in all_content, "previousMessages value not found"
     assert "What should I learn?" in all_content, "userPrompt value not found"
-    assert "Previous message 1" in all_content, "previousMessages value not found"
-    assert "What should I learn?" in all_content, "userPrompt value not found"
     
     print("✅ Test passed: All variables were properly replaced")
     print(f"\n{'='*60}")
