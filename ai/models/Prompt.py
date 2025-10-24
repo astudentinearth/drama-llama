@@ -5,8 +5,8 @@ class Prompt:
         self.name = name
         self.format = format
         
-        prompt = self._fetch_prompt()
-        self.prompt = self._fill_variables(prompt)
+        prompt_data = self._fetch_prompt()
+        self.prompt_data = self._fill_variables(prompt_data)
     
 
     def _fetch_prompt(self):
@@ -14,8 +14,23 @@ class Prompt:
         loader = PromptLoader()
         return loader.get_prompt(self.name)
     
-    def _fill_variables(self, prompt):
-        ## Find all variables with {{}} and replace them with values from self.format
-        for key, value in self.format.items():
-            prompt = prompt.replace(f"{{{{ {key} }}}}", value)
-        return prompt
+    def _fill_variables(self, prompt_data):
+        ## Find all variables with {{}} in messages and replace them with values from self.format
+        if 'messages' in prompt_data:
+            for message in prompt_data['messages']:
+                if 'content' in message:
+                    for key, value in self.format.items():
+                        # Convert value to string to handle lists and other types
+                        str_value = str(value) if not isinstance(value, str) else value
+                        # Match both {{key}} and {{ key }} patterns
+                        message['content'] = message['content'].replace(f"{{{{{key}}}}}", str_value)
+                        message['content'] = message['content'].replace(f"{{{{ {key} }}}}", str_value)
+        return prompt_data
+    
+    def get_prompt(self):
+        """Returns the full prompt data structure"""
+        return self.prompt_data
+    
+    def get_messages(self):
+        """Returns just the messages array"""
+        return self.prompt_data.get('messages', [])
