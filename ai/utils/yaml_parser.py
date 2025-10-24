@@ -6,9 +6,7 @@ import yaml
 class YamlParser:
     def __init__(self, file_path: str):
         self.file_path = file_path
-        self.data: Dict[str, Any] = {}
         self.data = dict()
-
     def parse(self):
         with open(self.file_path, 'r') as file:
             self.data = yaml.safe_load(file)
