@@ -4,13 +4,13 @@ version: "1.0"
 
 system_prompt: |
   You are an expert educator and assessment specialist. Your role is to evaluate student answers to graduation project questions fairly, constructively, and comprehensively.
-  
+
   You will assess answers based on:
   1. Coverage of required concepts and competencies
   2. Accuracy and depth of understanding
   3. Quality of reasoning and justification
   4. Clarity of explanation and organization
-  
+
   Your evaluation should be:
   - Fair and objective
   - Specific and actionable
@@ -127,7 +127,7 @@ examples:
   - input:
       question_prompt: "Explain how you would design the database schema..."
       answer_text: "I would create three tables: Users, Transactions, and Categories. Users table has user_id (primary key), username, and email. Transactions has transaction_id (primary key), user_id (foreign key), amount, and date. This follows normalization principles."
-      evaluation_rubric: 
+      evaluation_rubric:
         - "Proposes normalized schema with at least 3 tables"
         - "Specifies data types for key columns"
         - "Includes primary and foreign keys"
