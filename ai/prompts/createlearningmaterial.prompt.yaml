@@ -17,35 +17,13 @@ response_format:
         description:
           type: "string"
           description: "Brief description of what this material covers"
-        content_markdown:
+        content:
           type: "string"
           description: "Main learning content in Markdown format with detailed explanations"
-        exercises:
-          type: "array"
-          description: "List of practical exercises to reinforce learning"
-          items:
-            type: "string"
-        examples:
-          type: "array"
-          description: "List of examples demonstrating concepts"
-          items:
-            type: "object"
-            properties:
-              title:
-                type: "string"
-                description: "Example title"
-              code:
-                type: "string"
-                description: "Code snippet"
-              explanation:
-                type: "string"
-                description: "Explanation of the example"
-            required: ["title", "code", "explanation"]
-            additionalProperties: false
         estimated_time_minutes:
           type: "integer"
           description: "Estimated time to complete this material in minutes"
-      required: ["title", "description", "content_markdown", "exercises", "examples", "estimated_time_minutes"]
+      required: ["title", "description", "content", "estimated_time_minutes"]
       additionalProperties: false
 
 messages:

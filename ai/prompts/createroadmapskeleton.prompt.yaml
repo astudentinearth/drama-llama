@@ -37,7 +37,15 @@ response_format:
                 description: "List of prerequisite goal titles"
                 items:
                   type: "string"
-            required: ["goal_number", "title", "description", "priority", "estimated_hours", "prerequisites"]
+            required:
+              [
+                "goal_number",
+                "title",
+                "description",
+                "priority",
+                "estimated_hours",
+                "prerequisites",
+              ]
             additionalProperties: false
         graduation_project:
           type: "string"

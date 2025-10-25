@@ -461,21 +461,12 @@ class AIService:
         goal = get_goal(db, goal_id)
         difficulty_level = goal.skill_level if goal else SkillLevelEnum.INTERMEDIATE
         
-        # Build content with examples embedded
-        full_content = material_response.content_markdown
+        # Use Markdown content directly from response
+        # The prompt instructs the model to include explanations, examples, and exercises in the content field
+        full_content = material_response.content
         
-        # Append examples to content if they exist
-        if material_response.examples:
-            full_content += "\n\n## Examples\n\n"
-            for example in material_response.examples:
-                full_content += f"### {example.title}\n\n"
-                if example.code:
-                    full_content += f"```\n{example.code}\n```\n\n"
-                full_content += f"{example.explanation}\n\n"
-        
-        # Store exercises in project_requirements field (JSON)
-        # This matches the database schema where project_requirements is a JSON field
-        exercises_list = material_response.exercises if material_response.exercises else []
+        # No structured exercises provided in current schema; store empty list for project_requirements
+        exercises_list: list = []
         
         create_learning_material(
             db=db,
@@ -483,10 +474,10 @@ class AIService:
             title=material_response.title,
             material_type="lesson",
             description=material_response.description,
-            content=full_content,  # content_markdown → content
+            content=full_content,  # store Markdown content as-is
             estimated_time_minutes=material_response.estimated_time_minutes,
             difficulty_level=difficulty_level,
-            project_requirements=exercises_list  # exercises → project_requirements
+            project_requirements=exercises_list  # placeholder until structured exercises are added
         )
     def extract_cv_information(
         self,

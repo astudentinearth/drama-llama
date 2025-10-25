@@ -193,7 +193,5 @@ class LearningMaterialResponse(BaseModel):
     """Response from createLearningMaterials tool."""
     title: str = Field(..., description="Material title")
     description: str = Field(..., description="Material description")
-    content_markdown: str = Field(..., description="Main content in Markdown")
-    exercises: List[str] = Field(default_factory=list, description="List of exercises")
-    examples: List[LearningExample] = Field(default_factory=list, description="List of examples")
+    content: str = Field(..., description="Main content in Markdown")
     estimated_time_minutes: int = Field(..., description="Estimated completion time")

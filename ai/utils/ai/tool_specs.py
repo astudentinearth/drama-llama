@@ -119,17 +119,22 @@ TOOL_SPECS: Dict[str, Dict[str, Any]] = {
     
     "createLearningMaterials": {
         "description": (
-            "Create comprehensive learning materials for a specific goal within a roadmap. "
+            "Create comprehensive learning materials for goals within a roadmap. "
             "This generates detailed content including explanations, examples, exercises, and resources. "
             "The materials are contextualized with the previous and next goals to ensure smooth learning progression. "
-            "Use this after a roadmap has been created and the user wants to start learning a specific goal. "
-            "The user should specify which goal (by number or title) they want to learn."
+            "Use this after a roadmap has been created and the user wants to start learning. "
+            "You can either specify a single goal_id for one goal, or set generate_for_all_goals=true to create materials for ALL goals in parallel."
         ),
-        "ai_required": ["goal_id"],
+        "ai_required": [],
         "ai_parameters": {
             "goal_id": {
                 "type": "integer",
-                "description": "Database ID of the goal to create materials for. Use the 'Goal ID' number from the available goals list in context.",
+                "description": "Database ID of a specific goal to create materials for. Use the 'Goal ID' number from the available goals list. Optional if generate_for_all_goals is true.",
+                "source": SOURCE_AI
+            },
+            "generate_for_all_goals": {
+                "type": "boolean",
+                "description": "If true, generate learning materials for ALL goals in the roadmap in parallel. If false or omitted, only generate for the specified goal_id.",
                 "source": SOURCE_AI
             }
         },
@@ -192,7 +197,7 @@ TOOL_SPECS: Dict[str, Dict[str, Any]] = {
                     "type": "string",
                     "description": "Brief description of what this material covers"
                 },
-                "content_markdown": {
+                "content": {
                     "type": "string",
                     "description": "Main learning content in Markdown format with detailed explanations"
                 },

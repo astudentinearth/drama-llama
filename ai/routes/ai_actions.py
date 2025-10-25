@@ -593,36 +593,143 @@ def _execute_tool_call_sync(
     elif tool_name == 'createLearningMaterials':
         # Get goal_id from arguments
         goal_id = arguments.get('goal_id')
-        if not goal_id:
-            raise ValueError("goal_id is required for createLearningMaterials")
+        generate_for_all = arguments.get('generate_for_all_goals', True)
         
-        # Execute material creation
-        material_response = ai_service.execute_material_creation(
-            goal_id=goal_id,
-            session_id=session_id,
-            db=db
-        )
-        
-        # Save tool execution to message history
-        add_message_to_session(
-            db=db,
-            session_id=session_id,
-            role=MessageRole.ASSISTANT.value,
-            content=f"Created learning materials: {material_response.title}",
-            metadata={
-                'tool': 'createLearningMaterials',
-                'goal_id': goal_id,
-                'material_title': material_response.title,
-                'estimated_time': material_response.estimated_time_minutes
+        # If generate_for_all is True, create materials for all goals in parallel
+        if generate_for_all:
+            from db_config.crud import get_roadmap_by_session, get_goals_by_roadmap
+            from concurrent.futures import ThreadPoolExecutor, as_completed
+            
+            # Get all goals for this session's roadmap
+            roadmap = get_roadmap_by_session(db, session_id)
+            if not roadmap:
+                raise ValueError(f"No roadmap found for session {session_id}")
+            
+            goals = get_goals_by_roadmap(db, roadmap.id)
+            if not goals:
+                raise ValueError(f"No goals found for roadmap {roadmap.id}")
+            
+            # Create materials for all goals in parallel
+            materials = []
+            errors = []
+            
+            def create_material_for_goal(goal):
+                """Helper function to create material for a single goal."""
+                try:
+                    # Need to create a new DB session for each thread
+                    from db_config.database import SessionLocal
+                    thread_db = SessionLocal()
+                    try:
+                        material = ai_service.execute_material_creation(
+                            goal_id=goal.id,
+                            session_id=session_id,
+                            db=thread_db
+                        )
+                        return {
+                            'success': True, 
+                            'goal_id': goal.id, 
+                            'goal_number': goal.goal_number,
+                            'material': material
+                        }
+                    finally:
+                        thread_db.close()
+                except Exception as e:
+                    return {
+                        'success': False, 
+                        'goal_id': goal.id, 
+                        'goal_number': goal.goal_number,
+                        'error': str(e)
+                    }
+            
+            # Execute in parallel using ThreadPoolExecutor
+            with ThreadPoolExecutor(max_workers=min(5, len(goals))) as executor:
+                futures = {executor.submit(create_material_for_goal, goal): goal for goal in goals}
+                
+                for future in as_completed(futures):
+                    result = future.result()
+                    if result['success']:
+                        # Include goal_id and goal_number with the material for frontend mapping
+                        material_dict = result['material'].dict()
+                        material_dict['goal_id'] = result['goal_id']
+                        material_dict['goal_number'] = result['goal_number']
+                        materials.append(material_dict)
+                    else:
+                        errors.append(f"Goal {result['goal_number']} (ID: {result['goal_id']}): {result['error']}")
+            
+            # Save summary to message history
+            success_count = len(materials)
+            total_count = len(goals)
+            
+            add_message_to_session(
+                db=db,
+                session_id=session_id,
+                role=MessageRole.ASSISTANT.value,
+                content=f"Created learning materials for {success_count}/{total_count} goals",
+                metadata={
+                    'tool': 'createLearningMaterials',
+                    'generate_for_all_goals': True,
+                    'success_count': success_count,
+                    'total_count': total_count,
+                    'errors': errors if errors else None
+                }
+            )
+            
+            return {
+                'success': True,
+                'operation': 'createLearningMaterials',
+                'data': {
+                    'materials': materials,  # Already converted to dicts with goal_id
+                    'success_count': success_count,
+                    'total_count': total_count,
+                    'errors': errors if errors else None
+                },
+                'message': f'Successfully created learning materials for {success_count}/{total_count} goals'
             }
-        )
         
-        return {
-            'success': True,
-            'operation': 'createLearningMaterials',
-            'data': material_response.dict(),
-            'message': f'Successfully created learning materials: {material_response.title}'
-        }
+        else:
+            # Single goal mode
+            if not goal_id:
+                raise ValueError("goal_id is required for createLearningMaterials when generate_for_all_goals is False")
+            
+            # Get the goal to retrieve goal_number
+            from db_config.crud import get_goal
+            goal = get_goal(db, goal_id)
+            if not goal:
+                raise ValueError(f"Goal with id {goal_id} not found")
+            
+            # Execute material creation
+            material_response = ai_service.execute_material_creation(
+                goal_id=goal_id,
+                session_id=session_id,
+                db=db
+            )
+            
+            # Save tool execution to message history
+            add_message_to_session(
+                db=db,
+                session_id=session_id,
+                role=MessageRole.ASSISTANT.value,
+                content=f"Created learning materials: {material_response.title}",
+                metadata={
+                    'tool': 'createLearningMaterials',
+                    'goal_id': goal_id,
+                    'goal_number': goal.goal_number,
+                    'material_title': material_response.title,
+                    'estimated_time': material_response.estimated_time_minutes
+                }
+            )
+            
+            # Include goal_id and goal_number in the response for frontend mapping
+            material_data = material_response.dict()
+            material_data['goal_id'] = goal_id
+            material_data['goal_number'] = goal.goal_number
+            
+            return {
+                'success': True,
+                'operation': 'createLearningMaterials',
+                'data': material_data,
+                'message': f'Successfully created learning materials: {material_response.title}'
+            }
     
     else:
         raise ValueError(f"Unknown tool: {tool_name}")
