@@ -186,7 +186,7 @@ class TestCreateRoadmapSkeleton:
     
     async def test_response_without_response_key(self, mock_prompt):
         """Test handling when Ollama response doesn't contain 'response' key."""
-        with patch('utils.llm_tools.Prompt') as MockPrompt, \
+        with patch('models.Prompt') as MockPrompt, \
              patch('services.OllamaClient') as MockOllamaClient:
             
             MockPrompt.return_value = mock_prompt
