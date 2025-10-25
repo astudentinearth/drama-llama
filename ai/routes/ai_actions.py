@@ -3,8 +3,10 @@ AI Action routes.
 Handles AI chat and tool execution endpoints.
 """
 
-from typing import Dict, Any, Optional
+import json
+from typing import Dict, Any, Optional, AsyncIterator
 from fastapi import APIRouter, Depends, HTTPException, status, Body
+from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session
 from pydantic import BaseModel, Field
 
@@ -55,84 +57,140 @@ def get_ai_service() -> AIService:
     return _ai_service
 
 
-@router.post("/sessions/{session_id}/chat", response_model=AIToolResponse)
-def chat_with_ai(
+@router.post("/sessions/{session_id}/chat")
+async def chat_with_ai_stream(
     session_id: int,
     request: ChatRequest,
     db: Session = Depends(get_db),
     ai_service: AIService = Depends(get_ai_service)
 ):
     """
-    Chat with AI and get response with potential tool call instructions.
+    Chat with AI using Server-Sent Events (SSE) streaming.
     
     This endpoint:
-    1. Analyzes user message with full session history
-    2. Returns AI response with optional tool calls
-    3. Does NOT execute tools automatically
-    4. Saves user message to session history
+    1. Streams the initial AI response with tool calls (event: master_prompt)
+    2. Automatically executes any tool calls
+    3. Streams tool execution results (event: tool_name)
+    4. Ends with done event
     
     Args:
         session_id: Session ID
         request: Chat request with user message
     
     Returns:
-        AIToolResponse with content and potential tool calls
+        StreamingResponse with SSE events
     """
-    # Verify session exists
-    session = get_session(db, session_id)
-    if not session:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Session {session_id} not found"
-        )
+    async def event_generator() -> AsyncIterator[str]:
+        """Generate SSE events for the chat response."""
+        try:
+            # Verify session exists
+            session = get_session(db, session_id)
+            if not session:
+                yield format_sse_event('error', {
+                    'message': f'Session {session_id} not found'
+                })
+                return
+            
+            # Save user message to session
+            try:
+                add_message_to_session(
+                    db=db,
+                    session_id=session_id,
+                    role=MessageRole.USER.value,
+                    content=request.message
+                )
+            except Exception as e:
+                yield format_sse_event('error', {
+                    'message': f'Failed to save message: {str(e)}'
+                })
+                return
+            
+            # Get AI response with tool planning
+            try:
+                response = ai_service.plan_action(
+                    session_id=session_id,
+                    user_prompt=request.message,
+                    db=db
+                )
+                
+                # Save assistant response to session
+                add_message_to_session(
+                    db=db,
+                    session_id=session_id,
+                    role=MessageRole.ASSISTANT.value,
+                    content=response.content,
+                    metadata={
+                        'has_tool_calls': response.has_tool_calls,
+                        'tool_calls': [tc.dict() for tc in response.tool_calls],
+                        'usage': response.usage
+                    }
+                )
+                
+                # Stream master prompt response
+                yield format_sse_event('master_prompt', {
+                    'content': response.content,
+                    'has_tool_calls': response.has_tool_calls,
+                    'tool_calls': [
+                        {
+                            'tool_name': tc.tool_name,
+                            'arguments': tc.arguments,
+                            'call_id': tc.call_id
+                        }
+                        for tc in response.tool_calls
+                    ],
+                    'finish_reason': response.finish_reason,
+                    'usage': response.usage
+                })
+                
+                # Execute tool calls if any
+                if response.has_tool_calls:
+                    for tool_call in response.tool_calls:
+                        try:
+                            tool_result = await execute_tool_call(
+                                session_id=session_id,
+                                tool_call=tool_call,
+                                ai_service=ai_service,
+                                db=db
+                            )
+                            
+                            # Stream tool result with appropriate event name
+                            event_name = get_tool_event_name(tool_call.tool_name)
+                            yield format_sse_event(event_name, tool_result)
+                            
+                        except Exception as e:
+                            yield format_sse_event('error', {
+                                'operation': tool_call.tool_name,
+                                'message': f'Tool execution failed: {str(e)}'
+                            })
+                
+                # Stream done event
+                yield format_sse_event('done', {
+                    'message': 'Request completed successfully'
+                })
+                
+            except ValueError as e:
+                yield format_sse_event('error', {
+                    'message': f'Validation error: {str(e)}'
+                })
+            except Exception as e:
+                yield format_sse_event('error', {
+                    'message': f'AI service error: {str(e)}'
+                })
+                
+        except Exception as e:
+            yield format_sse_event('error', {
+                'message': f'Unexpected error: {str(e)}'
+            })
     
-    # Save user message to session
-    try:
-        add_message_to_session(
-            db=db,
-            session_id=session_id,
-            role=MessageRole.USER.value,
-            content=request.message
-        )
-    except Exception as e:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to save message: {str(e)}"
-        )
-    
-    # Get AI response with tool planning
-    try:
-        response = ai_service.plan_action(
-            session_id=session_id,
-            user_prompt=request.message,
-            db=db
-        )
-        
-        # Save assistant response to session
-        add_message_to_session(
-            db=db,
-            session_id=session_id,
-            role=MessageRole.ASSISTANT.value,
-            content=response.content,
-            metadata={
-                'has_tool_calls': response.has_tool_calls,
-                'tool_calls': [tc.dict() for tc in response.tool_calls],
-                'usage': response.usage
-            }
-        )
-        
-        return response
-        
-    except ValueError as e:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=str(e)
-        )
-    except Exception as e:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"AI service error: {str(e)}"
-        )
+    return StreamingResponse(
+        event_generator(),
+        media_type='text/event-stream',
+        headers={
+            'Cache-Control': 'no-cache',
+            'Connection': 'keep-alive',
+            'X-Accel-Buffering': 'no'  # Disable nginx buffering
+        }
+    )
 
 
 @router.post("/sessions/{session_id}/execute-tool/createRoadmapSkeleton", response_model=APIResponse)
@@ -367,4 +425,130 @@ def ai_health_check(ai_service: AIService = Depends(get_ai_service)):
             success=False,
             error=f"Groq API connection failed: {str(e)}"
         )
+
+
+# ============= SSE Helper Functions =============
+
+def format_sse_event(event_name: str, data: Dict[str, Any]) -> str:
+    """
+    Format data as Server-Sent Event.
+    
+    Args:
+        event_name: Name of the event
+        data: Data to send
+    
+    Returns:
+        Formatted SSE string
+    """
+    json_data = json.dumps(data, ensure_ascii=False)
+    return f"event: {event_name}\ndata: {json_data}\n\n"
+
+
+def get_tool_event_name(tool_name: str) -> str:
+    """
+    Map tool name to SSE event name.
+    
+    Args:
+        tool_name: Tool function name
+    
+    Returns:
+        Event name for SSE
+    """
+    tool_event_map = {
+        'createRoadmapSkeleton': 'roadmap_skeleton',
+        'createLearningMaterials': 'learning_materials'
+    }
+    return tool_event_map.get(tool_name, tool_name.lower())
+
+
+async def execute_tool_call(
+    session_id: int,
+    tool_call: 'ToolCallInstruction',
+    ai_service: AIService,
+    db: Session
+) -> Dict[str, Any]:
+    """
+    Execute a tool call and return result.
+    
+    Args:
+        session_id: Session ID
+        tool_call: Tool call instruction
+        ai_service: AI service instance
+        db: Database session
+    
+    Returns:
+        Tool execution result
+    """
+    tool_name = tool_call.tool_name
+    arguments = tool_call.arguments
+    
+    if tool_name == 'createRoadmapSkeleton':
+        # Execute roadmap creation
+        roadmap_response = ai_service.execute_roadmap_creation(
+            session_id=session_id,
+            tool_arguments=arguments,
+            db=db
+        )
+        
+        # Save tool execution to message history
+        add_message_to_session(
+            db=db,
+            session_id=session_id,
+            role=MessageRole.ASSISTANT.value,
+            content=f"Created roadmap with {len(roadmap_response.goals)} goals",
+            metadata={
+                'tool': 'createRoadmapSkeleton',
+                'goals_count': len(roadmap_response.goals),
+                'graduation_project': roadmap_response.graduation_project_title
+            }
+        )
+        
+        return {
+            'success': True,
+            'operation': 'createRoadmapSkeleton',
+            'data': {
+                'goals': [goal.dict() for goal in roadmap_response.goals],
+                'graduation_project': roadmap_response.graduation_project,
+                'graduation_project_title': roadmap_response.graduation_project_title,
+                'total_goals': len(roadmap_response.goals)
+            },
+            'message': f'Successfully created roadmap with {len(roadmap_response.goals)} goals'
+        }
+    
+    elif tool_name == 'createLearningMaterials':
+        # Get goal_id from arguments
+        goal_id = arguments.get('goal_id')
+        if not goal_id:
+            raise ValueError("goal_id is required for createLearningMaterials")
+        
+        # Execute material creation
+        material_response = ai_service.execute_material_creation(
+            goal_id=goal_id,
+            session_id=session_id,
+            db=db
+        )
+        
+        # Save tool execution to message history
+        add_message_to_session(
+            db=db,
+            session_id=session_id,
+            role=MessageRole.ASSISTANT.value,
+            content=f"Created learning materials: {material_response.title}",
+            metadata={
+                'tool': 'createLearningMaterials',
+                'goal_id': goal_id,
+                'material_title': material_response.title,
+                'estimated_time': material_response.estimated_time_minutes
+            }
+        )
+        
+        return {
+            'success': True,
+            'operation': 'createLearningMaterials',
+            'data': material_response.dict(),
+            'message': f'Successfully created learning materials: {material_response.title}'
+        }
+    
+    else:
+        raise ValueError(f"Unknown tool: {tool_name}")
 

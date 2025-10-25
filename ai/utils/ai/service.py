@@ -28,7 +28,7 @@ from db_config.crud import (
     create_goal,
     create_learning_material
 )
-from models.db_models import SkillLevelEnum, RoadmapStatusEnum
+from models.db_models import SkillLevelEnum
 
 
 class AIService:
@@ -73,26 +73,53 @@ class AIService:
         message_history = get_session_messages(db, session_id)
         formatted_history = Prompt.format_session_history(message_history)
         
-        # Format history as string for prompt
-        history_str = ""
-        for msg in formatted_history[-10:]:  # Last 10 messages for context
-            history_str += f"{msg['role'].upper()}: {msg['content']}\n"
+        # Exclude the last message if it matches the current user_prompt
+        # (The current message was already saved to DB before calling plan_action)
+        if formatted_history and formatted_history[-1].get('content') == user_prompt:
+            formatted_history = formatted_history[:-1]
         
-        # Check if roadmap exists to determine available tools
+        # Format history as string for prompt (last 10 messages)
+        # Make it very clear who said what
+        history_str = ""
+        if not formatted_history:
+            history_str = "(No previous conversation - this is the first message)"
+        else:
+            for i, msg in enumerate(formatted_history[-10:], 1):
+                role_label = "User said" if msg['role'] == 'user' else "You replied"
+                history_str += f"{i}. {role_label}: {msg['content']}\n"
+        
+        # Check if roadmap exists for context
         roadmap = get_roadmap_by_session(db, session_id)
         has_roadmap = roadmap is not None
         
-        # Determine which tools are available
+        # Conditionally provide tools based on roadmap existence
+        # This prevents the AI from trying to use unavailable functionality
         if has_roadmap:
+            # Roadmap exists: User can create learning materials OR create a new roadmap
             available_tools = ["createLearningMaterials"]
         else:
+            # No roadmap: User can ONLY create a roadmap first
             available_tools = ["createRoadmapSkeleton"]
+        
+        # Build context for the AI
+        context_info = f"Session #{session_id}"
+        if has_roadmap:
+            goals = get_goals_by_roadmap(db, roadmap.id)
+            context_info += f"\n- Existing roadmap: {roadmap.graduation_project_title}"
+            context_info += f"\n- Total goals: {len(goals)}"
+            context_info += f"\n- Completed goals: {sum(1 for g in goals if g.is_completed)}"
+            context_info += "\n- Available goals for learning:"
+            for goal in goals:
+                status = "✓ Completed" if goal.is_completed else "○ Not started"
+                context_info += f"\n  * Goal ID {goal.id}: {goal.title} [{status}]"
+        else:
+            context_info += "\n- No roadmap exists yet. You must create one first."
         
         # Load master prompt
         prompt = Prompt('master', {
             'previousMessages': history_str,
             'userPrompt': user_prompt,
-            'content': f"Session #{session_id}"
+            'content': context_info
         })
         
         # Get tool definitions
@@ -100,6 +127,23 @@ class AIService:
         
         # Execute with tools
         messages = prompt.get_messages()
+        
+        # DEBUG: Log what we're sending to the AI
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.info("="*80)
+        logger.info("SENDING TO AI:")
+        logger.info(f"Session ID: {session_id}")
+        logger.info(f"User Prompt: {user_prompt}")
+        logger.info(f"History String:\n{history_str}")
+        logger.info(f"Context Info:\n{context_info}")
+        logger.info("-"*80)
+        logger.info("FORMATTED MESSAGES:")
+        for i, msg in enumerate(messages):
+            logger.info(f"Message {i} ({msg['role']}):")
+            logger.info(f"{msg['content'][:500]}...")  # First 500 chars
+        logger.info("="*80)
+        
         response = self.client.execute_with_tools(
             messages=messages,
             tools=tool_definitions,
@@ -151,6 +195,27 @@ class AIService:
         Returns:
             RoadmapSkeletonResponse with created roadmap
         """
+        # Check if roadmap already exists
+        existing_roadmap = get_roadmap_by_session(db, session_id)
+        if existing_roadmap:
+            # Return existing roadmap instead of creating duplicate
+            goals = get_goals_by_roadmap(db, existing_roadmap.id)
+            return RoadmapSkeletonResponse(
+                goals=[
+                    RoadmapGoalSchema(
+                        goal_number=goal.goal_number,
+                        title=goal.title,
+                        description=goal.description,
+                        priority=goal.priority,
+                        estimated_hours=goal.estimated_hours,
+                        prerequisites=goal.prerequisites or []
+                    )
+                    for goal in sorted(goals, key=lambda g: g.goal_number)
+                ],
+                graduation_project=existing_roadmap.graduation_project or "",
+                graduation_project_title=existing_roadmap.graduation_project_title or ""
+            )
+        
         # Load the roadmap creation prompt
         prompt = Prompt('createroadmapskeleton', {
             'userRequest': tool_arguments.get('userRequest', ''),
@@ -275,8 +340,7 @@ class AIService:
             user_request=tool_arguments.get('userRequest', ''),
             total_estimated_weeks=total_weeks,
             graduation_project=roadmap_response.graduation_project,
-            graduation_project_title=roadmap_response.graduation_project_title,
-            status=RoadmapStatusEnum.IN_PROGRESS
+            graduation_project_title=roadmap_response.graduation_project_title
         )
         
         # Create goals
@@ -308,12 +372,25 @@ class AIService:
         db: Session
     ):
         """Save learning material to database."""
-        # Convert examples to JSON
-        examples_json = [ex.dict() for ex in material_response.examples]
-        
         # Determine difficulty level based on goal
         goal = get_goal(db, goal_id)
         difficulty_level = goal.skill_level if goal else SkillLevelEnum.INTERMEDIATE
+        
+        # Build content with examples embedded
+        full_content = material_response.content_markdown
+        
+        # Append examples to content if they exist
+        if material_response.examples:
+            full_content += "\n\n## Examples\n\n"
+            for example in material_response.examples:
+                full_content += f"### {example.title}\n\n"
+                if example.code:
+                    full_content += f"```\n{example.code}\n```\n\n"
+                full_content += f"{example.explanation}\n\n"
+        
+        # Store exercises in project_requirements field (JSON)
+        # This matches the database schema where project_requirements is a JSON field
+        exercises_list = material_response.exercises if material_response.exercises else []
         
         create_learning_material(
             db=db,
@@ -321,10 +398,9 @@ class AIService:
             title=material_response.title,
             material_type="lesson",
             description=material_response.description,
-            content=material_response.content_markdown,
+            content=full_content,  # content_markdown → content
             estimated_time_minutes=material_response.estimated_time_minutes,
             difficulty_level=difficulty_level,
-            exercises=material_response.exercises,
-            examples=examples_json
+            project_requirements=exercises_list  # exercises → project_requirements
         )
 

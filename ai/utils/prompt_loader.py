@@ -2,61 +2,50 @@
 
 import os
 import yaml
-from typing import Dict, Any, Optional
+from typing import Dict, Any
 from utils import YamlParser
 
 class PromptLoader:
     """
-    Singleton PromptLoader that loads prompts once and caches them.
+    PromptLoader that loads prompts fresh every time (no caching).
+    This ensures prompt changes are always picked up immediately.
     """
-    _instance: Optional['PromptLoader'] = None
-    _prompts_loaded: bool = False
-    
-    def __new__(cls) -> 'PromptLoader':
-        if cls._instance is None:
-            instance = super(PromptLoader, cls).__new__(cls)
-            instance.directory = os.path.join(os.path.dirname(__file__), '../prompts')
-            instance.prompts = {}
-            cls._instance = instance
-        return cls._instance
     
     def __init__(self) -> None:
-        """Initialize instance variables if not already initialized."""
-        if not hasattr(self, 'directory'):
-            self.directory: str = os.path.join(os.path.dirname(__file__), '../prompts')
-        if not hasattr(self, 'prompts'):
-            self.prompts: Dict[str, Any] = {}
-
-    def load_prompts(self) -> Dict[str, Any]:
-        """Load prompts from YAML files. Only loads once, subsequent calls use cache."""
-        if PromptLoader._prompts_loaded:
-            return self.prompts
-            
-        for filename in os.listdir(self.directory):
-            if filename.endswith('.yaml'):
-                with open(os.path.join(self.directory, filename), 'r') as file:
-                    self.prompts[filename] = YamlParser(file_path=file.name).parse()
-        
-        PromptLoader._prompts_loaded = True
-        return self.prompts
+        """Initialize with prompts directory path."""
+        self.directory: str = os.path.join(os.path.dirname(__file__), '../prompts')
     
     def get_prompt(self, name: str) -> Dict[str, Any]:
-        """Get a prompt by name. Automatically loads prompts if not already loaded."""
-        # Ensure prompts are loaded
-        if not PromptLoader._prompts_loaded:
-            self.load_prompts()
+        """
+        Get a prompt by name. Loads fresh from disk every time.
         
+        Args:
+            name: Name of the prompt (without .prompt.yaml extension)
+            
+        Returns:
+            Dict with prompt data
+            
+        Raises:
+            ValueError: If prompt file not found
+        """
         # lowercase the name for case-insensitive matching
         name = name.lower()
         
-        # if the name match with name.prompt.yaml, return that prompt
+        # Build full file path
         prompt_file = f"{name}.prompt.yaml"
-        if prompt_file in self.prompts:
-            return self.prompts[prompt_file]
-        raise ValueError(f"Prompt '{name}' not found.")
+        file_path = os.path.join(self.directory, prompt_file)
+        
+        # Check if file exists
+        if not os.path.exists(file_path):
+            raise ValueError(f"Prompt '{name}' not found at {file_path}")
+        
+        # Load and parse the YAML file
+        with open(file_path, 'r', encoding='utf-8') as file:
+            prompt_data = YamlParser(file_path=file.name).parse()
+        
+        return prompt_data
     
     @classmethod
     def reset(cls) -> None:
-        """Reset the singleton instance and cache. Useful for testing."""
-        cls._instance = None
-        cls._prompts_loaded = False
+        """Reset method for compatibility (no-op since we don't cache)."""
+        pass
