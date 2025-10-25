@@ -123,7 +123,7 @@ def get_session_by_id(
 
 @router.get("/user/{user_id}", response_model=SessionListResponse)
 def get_user_sessions(
-    user_id: int,
+    user_id: str,
     status_filter: Optional[str] = Query(None, description="Filter by status: active, completed, archived"),
     skip: int = Query(0, ge=0, description="Number of sessions to skip"),
     limit: int = Query(100, ge=1, le=500, description="Maximum number of sessions to return"),

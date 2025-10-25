@@ -4,9 +4,11 @@ import JobsCard from "./jobs-card";
 import { useJobsQuery } from "./jobs.query";
 import { Button } from "@/components/ui/button";
 import { X } from "lucide-react";
+import { useAuth } from "../auth/auth.query";
 
 export default function JobsPage() {
   const { data: jobsData, isLoading, error } = useJobsQuery();
+  const user = useAuth().data;
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
 
   // Extract all unique tags from jobs data (case insensitive)
@@ -53,7 +55,7 @@ export default function JobsPage() {
     <div className="page-transition p-6">
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-3xl font-bold">Jobs</h1>
-        <NewListingDialog />
+        {user?.roles.includes("RECRUITER") && <NewListingDialog />}
       </div>
       
       {isLoading && (
@@ -88,7 +90,7 @@ export default function JobsPage() {
                 )}
               </div>
               
-              <div className="flex flex-wrap gap-2">
+              <div className="flex gap-2 h-full overflow-x-auto pb-4">
                 {allTags.map((tag) => (
                   <Button
                     key={tag}

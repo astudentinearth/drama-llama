@@ -115,7 +115,8 @@
     * {
         @apply border-border outline-ring/50;
     }
-    body, #root {
+    body,
+    #root {
         @apply bg-background text-foreground fixed left-0 right-0 bottom-0 top-0;
         font-family: Poppins;
     }
@@ -123,4 +124,8 @@
 
 h1 {
     @apply font-semibold;
+}
+
+.page-transition {
+    @apply animate-in fade-in-0 duration-125 slide-in-from-bottom-4 overflow-y-auto;
 }
