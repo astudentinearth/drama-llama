@@ -14,6 +14,7 @@ export interface RegisterDTO {
 }
 
 export async function login(username: string, password: string) {
+  console.log("logging in");
   const params = new URLSearchParams();
   params.append("username", username);
   params.append("password", password);

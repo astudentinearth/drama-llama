@@ -1,3 +1,3 @@
 export default function JobsPage() {
-  return <div>jobs</div>;
+  return <div className="page-transition">jobs</div>;
 }
