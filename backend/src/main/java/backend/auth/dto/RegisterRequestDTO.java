@@ -21,4 +21,6 @@ public class RegisterRequestDTO {
     @Length(min = 3, max = 255)
     @NotBlank
     private String email;
+
+    private boolean recruiter;
 }
