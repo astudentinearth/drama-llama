@@ -47,6 +47,8 @@ class ToolDecisionContext:
     previous_tool_calls: List[Dict[str, Any]] = None
     user_profile: Dict[str, Any] = None
     system_state: Dict[str, Any] = None
+    db: Any = None  # Database session
+    session_id: int = None  # Session ID for the conversation
 
 
 @dataclass
@@ -485,14 +487,10 @@ class ToolDecisionEngine:
                     results.append(execution_result)
                     continue
                 
-                # Execute tool with fallback mechanisms
-                result, success, message = await self.validator.execute_with_fallback(
-                    tool_name, params, self._get_tool_function(tool_name), {
-                        "conversation_history": context.conversation_history,
-                        "user_profile": context.user_profile,
-                        "system_state": context.system_state
-                    }
-                )
+                # Execute tool directly using _execute_single_tool which has proper parameter mapping
+                result = await self._execute_single_tool(tool_name, params, context)
+                success = True
+                message = "Tool executed successfully"
                 
                 execution_time = (datetime.now() - start_time).total_seconds()
                 
@@ -580,7 +578,8 @@ class ToolDecisionEngine:
         # Map parameters to function arguments
         if tool_name == "createRoadmapSkeleton":
             return await tool_function(
-                db=None,  # TODO: Pass actual db connection
+                db=context.db,
+                session_id=context.session_id,
                 user_request=params.get("user_request", ""),
                 job_listings=params.get("job_listings"),
                 user_summarized_cv=params.get("user_summarized_cv"),
@@ -588,7 +587,6 @@ class ToolDecisionEngine:
             )
         elif tool_name == "createLearningMaterials":
             return await tool_function(
-                db=None,  # TODO: Pass actual db connection
                 things_to_learn=params.get("things_to_learn", []),
                 end_of_roadmap_project=params.get("end_of_roadmap_project", "")
             )

@@ -6,16 +6,18 @@ from utils.tool_decision_engine import ToolDecisionEngine, ToolDecisionContext, 
 import asyncio
 from typing import Optional, Dict, Any
 import logging
+import json
 from sqlalchemy.orm import Session
-from db_config.crud import add_message_to_session, get_session_messages
+from db_config.crud import add_message_to_session, get_session_messages, create_roadmap, create_goal
 from models.schemas import MessageCreate, MessageRole
+from models.db_models import SkillLevelEnum
 from datetime import datetime
 logger = logging.getLogger(__name__)
 """
 When user stated he/she want to apply for a job, how can I develop my self etc. this tool should be triggered.
 This tool briefly takes summary of user request, and the links mentioned.
 """
-async def createRoadmapSkeleton(user_request: str, job_listings: Optional[list[str]] = None, user_summarized_cv: Optional[str] = None, user_expertise_domains: Optional[list[str]] = None) -> str:
+async def createRoadmapSkeleton(db: Session, session_id: int, user_request: str, job_listings: Optional[list[str]] = None, user_summarized_cv: Optional[str] = None, user_expertise_domains: Optional[list[str]] = None) -> str:
     jobListings = ["this is an example job listing, requiring skills in python, django, rest api, sql, git, docker"]
     
     # 0. load prompt with variables
@@ -52,9 +54,48 @@ async def createRoadmapSkeleton(user_request: str, job_listings: Optional[list[s
     if not async_response.get("success", False):
         raise Exception(f"Failed to generate roadmap skeleton: {async_response.get('error', 'Unknown error')}")
     
-    # 5. put things-to-learn array and end of roadmap project details in session-db
+    # 5. Parse the LLM response and save to database
+    try:
+        # Parse the JSON response into RoadmapResponse model
+        roadmap_data = json.loads(async_response.get("response", "{}"))
+        roadmap_response = RoadmapResponse(**roadmap_data)
+        
+        # Create the roadmap in the database
+        db_roadmap = create_roadmap(
+            db=db,
+            session_id=session_id,
+            user_request=user_request,
+            user_summarized_cv=user_summarized_cv,
+            user_expertise_domains=user_expertise_domains,
+            job_listings=job_listings,
+            total_estimated_weeks=roadmap_response.total_estimated_weeks,
+            graduation_project=roadmap_response.graduation_project
+        )
+        
+        # Create roadmap goals in the database
+        for goal in roadmap_response.goals:
+            create_goal(
+                db=db,
+                roadmap_id=db_roadmap.id,
+                goal_number=goal.goal_number,
+                title=goal.title,
+                description=goal.description,
+                priority=goal.priority,
+                skill_level=SkillLevelEnum.BEGINNER,  # Default for now
+                estimated_hours=goal.estimated_hours,
+                prerequisites=goal.prerequisites
+            )
+        
+        logger.info(f"Created roadmap (ID: {db_roadmap.id}) with {len(roadmap_response.goals)} goals for session {session_id}")
+        
+    except json.JSONDecodeError as e:
+        logger.error(f"Failed to parse roadmap response JSON: {e}")
+        raise Exception(f"Failed to parse roadmap response: {str(e)}")
+    except Exception as e:
+        logger.error(f"Failed to save roadmap to database: {e}")
+        raise Exception(f"Failed to save roadmap: {str(e)}")
     
-    # 6. return this array and project inside a friendly/professinal text
+    # 6. return this array and project inside a friendly/professional text
     return async_response.get("response", "")
 
 async def createLearningMaterials(things_to_learn: list[str], end_of_roadmap_project: str) -> str:
@@ -120,7 +161,9 @@ async def master(request: ChatRequest, db: Session) -> Dict[str, Any]:
             user_message=request.userPrompt,
             conversation_history=previous_messages,
             available_tools=["createRoadmapSkeleton", "createLearningMaterials"],
-            previous_tool_calls=[]  # TODO: Extract from conversation history
+            previous_tool_calls=[],  # TODO: Extract from conversation history
+            db=db,
+            session_id=session_id
         )
         
         # Make intelligent tool decision
