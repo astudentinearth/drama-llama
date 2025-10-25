@@ -488,4 +488,18 @@ class AIService:
             difficulty_level=difficulty_level,
             project_requirements=exercises_list  # exercises → project_requirements
         )
-
+    def extract_cv_information(
+        self,
+        user_cv: str,
+    ) -> str:
+        """Extract CV information from the provided text."""
+        prompt = Prompt('extractcvinformation', {
+            'userCv': user_cv
+        })
+        messages = prompt.get_messages()
+        response = self.client.execute(
+            messages=messages,
+            temperature=prompt.get_temperature()
+        )
+        return response.get_content()
+        

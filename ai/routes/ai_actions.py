@@ -10,7 +10,7 @@ from fastapi import APIRouter, Depends, HTTPException, status, Body
 from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session
 from pydantic import BaseModel, Field
-
+from utils.pdf_parse import extract_text_from_pdf
 from db_config import get_db, add_message_to_session, get_session
 from models.schemas import (
     AIToolResponse,
@@ -202,6 +202,40 @@ async def chat_with_ai_stream(
         }
     )
 
+class SummarizeCVRequest(BaseModel):
+    cv_url: str = Field(..., description="URL of the CV")
+
+@router.post("/sessions/{session_id}/summarize-cv", response_model=APIResponse)
+def execute_summarize_cv(
+    session_id: int,
+    request: SummarizeCVRequest,
+    db: Session = Depends(get_db),
+    ai_service: AIService = Depends(get_ai_service),
+):
+    """
+    Summarize the CV of the user.
+    """
+    # Verify session exists
+    session = get_session(db, session_id)
+    if not session:
+        return APIResponse(
+            success=False,
+            error=f"Session {session_id} not found"
+        )
+    try:
+        cv_text = extract_text_from_pdf(request.cv_url)
+        summary = ai_service.extract_cv_information(cv_text)
+        return APIResponse(
+            success=True,
+            data={
+                'summary': summary
+            }
+        )
+    except Exception as e:
+        return APIResponse(
+            success=False,
+            error=f"Failed to summarize CV: {str(e)}"
+        )
 
 @router.post("/sessions/{session_id}/execute-tool/createRoadmapSkeleton", response_model=APIResponse)
 def execute_create_roadmap(
