@@ -326,4 +326,42 @@ class GroqClient:
         """Calculate exponential backoff delay."""
         # Exponential backoff: 1s, 2s, 4s, 8s... (max 30s)
         return min(self.RATE_LIMIT_DELAY * (2 ** (attempt - 1)), 30)
+    
+    def stream(
+        self,
+        messages: Union[List[Dict[str, Any]], str],
+        tools: Optional[List[Dict[str, Any]]] = None,
+        tool_choice: Optional[Union[str, Dict[str, Any]]] = None,
+        response_format: Optional[Dict[str, Any]] = None,
+        **kwargs
+    ):
+        """
+        Stream completion with support for tools.
+        Yields chunks of the response as they arrive.
+        
+        Args:
+            messages: List of message dicts or single string prompt
+            tools: Optional list of tool definitions
+            tool_choice: Optional tool choice strategy
+            response_format: Optional response format specification
+            **kwargs: Additional parameters to pass to API
+        
+        Yields:
+            Chunks from the streaming response
+        """
+        # Convert string to messages format
+        if isinstance(messages, str):
+            messages = [{'role': 'user', 'content': messages}]
+        
+        request = self._build_request(messages, tools, tool_choice, response_format, **kwargs)
+        request['stream'] = True  # Enable streaming
+        
+        try:
+            stream = self.client.chat.completions.create(**request)
+            for chunk in stream:
+                yield chunk
+        except Exception as e:
+            print(f"Streaming error: {str(e)}")
+            raise
+
 

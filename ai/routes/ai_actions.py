@@ -4,6 +4,7 @@ Handles AI chat and tool execution endpoints.
 """
 
 import json
+import asyncio
 from typing import Dict, Any, Optional, AsyncIterator
 from fastapi import APIRouter, Depends, HTTPException, status, Body
 from fastapi.responses import StreamingResponse
@@ -16,7 +17,8 @@ from models.schemas import (
     RoadmapSkeletonResponse,
     LearningMaterialResponse,
     APIResponse,
-    MessageRole
+    MessageRole,
+    ToolCallInstruction
 )
 from utils.ai.service import AIService
 from utils.groq_client import GroqClient
@@ -126,9 +128,9 @@ async def chat_with_ai_stream(
                     }
                 )
                 
-                # Stream master prompt response
+                # Send master prompt response as single event
                 yield format_sse_event('master_prompt', {
-                    'content': response.content,
+                    'response': response.content,
                     'has_tool_calls': response.has_tool_calls,
                     'tool_calls': [
                         {
@@ -142,7 +144,10 @@ async def chat_with_ai_stream(
                     'usage': response.usage
                 })
                 
-                # Execute tool calls if any
+                # Yield control to ensure the event is sent before tool execution
+                await asyncio.sleep(0)
+                
+                # Execute tool calls if any (send each as separate event)
                 if response.has_tool_calls:
                     for tool_call in response.tool_calls:
                         try:
@@ -156,6 +161,9 @@ async def chat_with_ai_stream(
                             # Stream tool result with appropriate event name
                             event_name = get_tool_event_name(tool_call.tool_name)
                             yield format_sse_event(event_name, tool_result)
+                            
+                            # Yield control between tool executions
+                            await asyncio.sleep(0)
                             
                         except Exception as e:
                             yield format_sse_event('error', {
@@ -469,6 +477,37 @@ async def execute_tool_call(
 ) -> Dict[str, Any]:
     """
     Execute a tool call and return result.
+    Runs synchronous tool execution in a thread pool to avoid blocking.
+    
+    Args:
+        session_id: Session ID
+        tool_call: Tool call instruction
+        ai_service: AI service instance
+        db: Database session
+    
+    Returns:
+        Tool execution result
+    """
+    # Run synchronous tool execution in thread pool
+    loop = asyncio.get_event_loop()
+    return await loop.run_in_executor(
+        None,  # Use default executor
+        _execute_tool_call_sync,
+        session_id,
+        tool_call,
+        ai_service,
+        db
+    )
+
+
+def _execute_tool_call_sync(
+    session_id: int,
+    tool_call: 'ToolCallInstruction',
+    ai_service: AIService,
+    db: Session
+) -> Dict[str, Any]:
+    """
+    Synchronous tool execution (runs in thread pool).
     
     Args:
         session_id: Session ID
