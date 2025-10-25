@@ -285,8 +285,7 @@ def get_full_session_data(
             "completed_at": format_datetime(session.completed_at)
         },
         "roadmap": None,
-        "goals": [],
-        "materials": []
+        "goals": []
     }
     
     if session.roadmap:
@@ -302,6 +301,27 @@ def get_full_session_data(
         }
         
         for goal in roadmap.goals:
+            # Build materials array for this goal
+            materials = []
+            for material in goal.learning_materials:
+                material_data = {
+                    "id": material.id,
+                    "goal_id": material.goal_id,
+                    "title": material.title,
+                    "material_type": material.material_type,
+                    "description": material.description,
+                    "content": material.content,
+                    "source_url": material.source_url,
+                    "estimated_time_minutes": material.estimated_time_minutes,
+                    "difficulty_level": material.difficulty_level.value if material.difficulty_level else None,
+                    "is_completed": material.is_completed,
+                    "user_rating": material.user_rating,
+                    "relevance_score": material.relevance_score,
+                    "quality_score": material.quality_score
+                }
+                materials.append(material_data)
+            
+            # Build goal data with nested materials
             goal_data = {
                 "id": goal.id,
                 "goal_number": goal.goal_number,
@@ -314,26 +334,10 @@ def get_full_session_data(
                 "is_completed": goal.is_completed,
                 "completion_percentage": goal.completion_percentage,
                 "started_at": format_datetime(goal.started_at),
-                "completed_at": format_datetime(goal.completed_at)
+                "completed_at": format_datetime(goal.completed_at),
+                "materials": materials
             }
             session_data["goals"].append(goal_data)
-            
-            for material in goal.learning_materials:
-                material_data = {
-                    "id": material.id,
-                    "goal_id": material.goal_id,
-                    "title": material.title,
-                    "material_type": material.material_type,
-                    "description": material.description,
-                    "source_url": material.source_url,
-                    "estimated_time_minutes": material.estimated_time_minutes,
-                    "difficulty_level": material.difficulty_level.value if material.difficulty_level else None,
-                    "is_completed": material.is_completed,
-                    "user_rating": material.user_rating,
-                    "relevance_score": material.relevance_score,
-                    "quality_score": material.quality_score
-                }
-                session_data["materials"].append(material_data)
     
     return APIResponse(success=True, data=session_data)
 
