@@ -1,5 +1,5 @@
 from models.Prompt import Prompt
-from models.schemas import RoadmapResponse
+from models.schemas import RoadmapResponse, LearningMaterialResponse
 from services.OllamaClient import OllamaClient
 import asyncio
 
@@ -47,4 +47,34 @@ async def createRoadmapSkeleton(db, user_request: str, job_listings: list[str], 
     # 5. put things-to-learn array and end of roadmap project details in session-db
     
     # 6. return this array and project inside a friendly/professinal text
+    return async_response.get("response", "")
+
+async def createLearningMaterials(db, things_to_learn: list[str], end_of_roadmap_project: str) -> str:
+    learningmaterialsrequest = {
+        "thingsToLearn": things_to_learn if things_to_learn else [],
+        "endOfRoadmapProject": end_of_roadmap_project if end_of_roadmap_project else ""
+    }
+    prompt = Prompt("createlearningmaterials", format=learningmaterialsrequest)
+    assert prompt is not None, "Prompt 'createlearningmaterials' could not be loaded."
+
+    ollama_client = OllamaClient()
+    response = ollama_client.generate(
+        prompt=prompt.get_user_prompt(),
+        system_prompt=prompt.get_system_prompt(),
+        temperature=0.2,
+        format=LearningMaterialResponse.model_json_schema()
+    )
+
+    # crawl web
+
+    # scrape top 3 results
+
+    # Check cache for old generations
+
+    # 
+
+    async_response = await response
+    if not async_response.get("success", False):
+        raise Exception(f"Failed to generate learning materials: {async_response.get('error', 'Unknown error')}")
+    
     return async_response.get("response", "")
