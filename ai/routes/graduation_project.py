@@ -256,7 +256,7 @@ def generate_questions_from_session_data(
     )
 
 
-@router.post("/{session_id}/graduation-project/generate-questions")
+@router.post("/{session_id}/generate-questions")
 async def generate_graduation_questions(
     session_id: int,
     db: Session = Depends(get_db)
