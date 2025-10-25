@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { useChatStream } from "./roadmap.hooks";
 import { useSessionMessagesQuery } from "./roadmap.query";
-import { Send, Bot, User, Loader2, CheckCircle, Wrench, Sparkles } from "lucide-react";
+import { Send, Bot, User, Loader2, CheckCircle, Sparkles } from "lucide-react";
 import type { IMessage } from "./roadmap.types";
 
 interface ChatMessage {
@@ -38,9 +38,10 @@ export default function ChatPane({ sessionId }: ChatPaneProps) {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { isStreaming, currentMessage, error, sendMessage, resetMessage } =
     useChatStream(sessionId);
-  
+
   // Load old messages
-  const { data: oldMessages, isLoading: isLoadingMessages } = useSessionMessagesQuery(sessionId);
+  const { data: oldMessages, isLoading: isLoadingMessages } =
+    useSessionMessagesQuery(sessionId);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -51,7 +52,9 @@ export default function ChatPane({ sessionId }: ChatPaneProps) {
   }, [messages, currentMessage]);
 
   // Convert API messages to chat messages
-  const convertApiMessageToChatMessage = (apiMessage: IMessage): ChatMessage => {
+  const convertApiMessageToChatMessage = (
+    apiMessage: IMessage
+  ): ChatMessage => {
     const chatMessage: ChatMessage = {
       id: `${apiMessage.timestamp}-${apiMessage.role}`,
       role: apiMessage.role,
@@ -61,7 +64,7 @@ export default function ChatPane({ sessionId }: ChatPaneProps) {
 
     // Parse tool calls from metadata if available
     if (apiMessage.metadata?.has_tool_calls && apiMessage.metadata.tool_calls) {
-      chatMessage.toolCalls = apiMessage.metadata.tool_calls.map(tc => ({
+      chatMessage.toolCalls = apiMessage.metadata.tool_calls.map((tc) => ({
         tool_name: tc.tool_name,
         arguments: tc.arguments,
         call_id: tc.call_id,
@@ -75,18 +78,22 @@ export default function ChatPane({ sessionId }: ChatPaneProps) {
   useEffect(() => {
     console.log(`ChatPane: Session ${sessionId} - Loading messages`, {
       oldMessages: oldMessages?.length,
-      isLoading: isLoadingMessages
+      isLoading: isLoadingMessages,
     });
-    
+
     // Clear input and reset stream when session changes
     setInputValue("");
     resetMessage();
-    
+
     // Load messages for the current session
     if (oldMessages !== undefined) {
       if (oldMessages.length > 0) {
-        const convertedMessages = oldMessages.map(convertApiMessageToChatMessage);
-        console.log(`ChatPane: Setting ${convertedMessages.length} messages for session ${sessionId}`);
+        const convertedMessages = oldMessages.map(
+          convertApiMessageToChatMessage
+        );
+        console.log(
+          `ChatPane: Setting ${convertedMessages.length} messages for session ${sessionId}`
+        );
         setMessages(convertedMessages);
       } else {
         // No old messages for this session
@@ -95,7 +102,9 @@ export default function ChatPane({ sessionId }: ChatPaneProps) {
       }
     } else if (!isLoadingMessages) {
       // Messages finished loading but are undefined - likely an error
-      console.log(`ChatPane: Messages undefined for session ${sessionId}, not loading`);
+      console.log(
+        `ChatPane: Messages undefined for session ${sessionId}, not loading`
+      );
       setMessages([]);
     }
     // If isLoadingMessages is true, don't clear messages yet
@@ -226,7 +235,6 @@ export default function ChatPane({ sessionId }: ChatPaneProps) {
         return "Created roadmap";
     }
   };
-  
 
   const renderToolCalls = (toolCalls: ChatMessage["toolCalls"]) => {
     if (!toolCalls || toolCalls.length === 0) return null;
@@ -283,7 +291,8 @@ export default function ChatPane({ sessionId }: ChatPaneProps) {
           <h3 className="font-semibold">Roadmap Assistant</h3>
         </div>
         <p className="text-sm text-muted-foreground mt-1">
-          Describe your learning goals to generate a tailored roadmap and study materials.
+          Describe your learning goals to generate a tailored roadmap and study
+          materials.
         </p>
       </div>
 
@@ -354,7 +363,6 @@ export default function ChatPane({ sessionId }: ChatPaneProps) {
 
                 {renderToolCalls(message.toolCalls)}
                 {renderToolResults(message.toolResults)}
-
               </div>
             </div>
           </div>

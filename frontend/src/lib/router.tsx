@@ -2,6 +2,7 @@ import LoginPage from "@/features/auth/login.page";
 import RegisterPage from "@/features/auth/register.page";
 import CompanyPage from "@/features/company/company.page";
 import JobsPage from "@/features/jobs/jobs.page";
+import JobDetailPage from "@/features/jobs/job-detail.page.tsx";
 import Layout from "@/features/layout/layout";
 import ProfilePage from "@/features/profile/profile.page";
 import RoadmapPage from "@/features/roadmap/roadmap.page";
@@ -16,6 +17,7 @@ export default function Router() {
           <Route path="/roadmaps" element={<RoadmapPage />} />
           <Route path="/roadmaps/:sessionId" element={<RoadmapPage />} />
           <Route path="/jobs" element={<JobsPage />} />
+          <Route path="/jobs/:jobId" element={<JobDetailPage />} />
           <Route path="/profile" element={<ProfilePage />} />
           <Route path="/company/:companyId" element={<CompanyPage />} />
         </Route>
