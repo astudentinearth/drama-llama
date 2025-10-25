@@ -3,7 +3,7 @@ from fastapi import FastAPI
 from sqlalchemy import text
 from models.schemas import ChatRequest
 from utils.llm_tools import master
-from db_config.database import init_db, get_db_context
+from db_config.database import init_db, get_db_context, drop_db
 app = FastAPI()
 
 @app.post("/chat")
@@ -21,3 +21,12 @@ def health_check():
         except Exception as e:
             return {"status": "error", "database": "not connected", "error": str(e)}
     return {"status": "error", "database": "not connected", "error": "Database connection failed"}
+
+@app.get("/drop_db")
+def drop_db_endpoint():
+    try:
+        drop_db()
+        return {"status": "ok", "database": "dropped"}
+    except Exception as e:
+        return {"status": "error", "database": "not dropped", "error": str(e)}
+    return {"status": "error", "database": "not dropped", "error": "Database drop failed"}
