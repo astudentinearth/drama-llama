@@ -26,6 +26,7 @@ export default function Router() {
         <Route path="/" element={<Layout />}>
           <Route index element={<Navigate to={"/roadmaps"} />} />
           <Route path="/roadmaps" element={<RoadmapPage />} />
+          <Route path="/roadmaps/:sessionId" element={<RoadmapPage />} />
           <Route path="/jobs" element={<JobsPage />} />
           <Route path="/profile" element={<ProfilePage />} />
           <Route path="/company/:companyId" element={<CompanyPage />} />

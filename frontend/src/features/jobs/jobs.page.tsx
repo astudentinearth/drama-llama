@@ -52,7 +52,7 @@ export default function JobsPage() {
   };
 
   return (
-    <div className="page-transition p-6">
+    <div className="page-transition p-6 max-w-300">
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-3xl font-bold">Jobs</h1>
         {user?.roles.includes("RECRUITER") && <NewListingDialog />}

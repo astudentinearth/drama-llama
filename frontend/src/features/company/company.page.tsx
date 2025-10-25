@@ -112,7 +112,7 @@ export default function CompanyPage() {
   }
 
   return (
-    <div className="page-transition p-6">
+    <div className="page-transition p-6 max-w-300">
       {/* Company Header */}
       <div className="mb-8">
         <div className="flex justify-between items-start mb-2">

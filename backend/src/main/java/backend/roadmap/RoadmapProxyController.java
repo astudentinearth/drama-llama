@@ -1,9 +1,12 @@
 package backend.roadmap;
 
+import backend.auth.AuthContext;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.reactive.function.client.ClientResponse;
 import org.springframework.web.reactive.function.client.WebClient;
@@ -32,6 +35,8 @@ public class RoadmapProxyController {
 
     @Value("${ai.service.api-key}")
     private String aiServiceApiKey;
+
+    private final AuthContext authContext;
 
     private String buildUrl(String pathTemplate, Map<String, ?> uriVars) {
         String base = aiServiceUrl != null ? aiServiceUrl : "";
@@ -68,6 +73,12 @@ public class RoadmapProxyController {
             resp.headers().contentType().ifPresent(ct -> builder.header(HttpHeaders.CONTENT_TYPE, ct.toString()));
             return builder.body(body);
         });
+    }
+
+    @GetMapping("/sessions")
+    public Mono<ResponseEntity<byte[]>> getSessions() {
+        var user = authContext.getCurrentUser();
+        return proxyGet("/sessions/user/{user_id}", Map.of("user_id", user.getId()));
     }
 
     @GetMapping("/sessions/{sessionId}")
@@ -132,6 +143,8 @@ public class RoadmapProxyController {
     @PostMapping("/sessions")
     public Mono<ResponseEntity<byte[]>> createSession(@RequestBody CreateSessionDTO dto) {
         if (dto.getStatus() == null || dto.getStatus().isBlank()) dto.setStatus("active");
+        var user = authContext.getCurrentUser();
+        dto.setUser_id(user.getId().toString());
         String url = buildUrl("/sessions/", Map.of());
         return webClient.post()
                 .uri(url)
@@ -152,6 +165,7 @@ public class RoadmapProxyController {
                 .accept(MediaType.TEXT_EVENT_STREAM)
                 .bodyValue(body)
                 .retrieve()
-                .bodyToFlux(new ParameterizedTypeReference<ServerSentEvent<String>>() {});
+                .bodyToFlux(new ParameterizedTypeReference<ServerSentEvent<String>>() {
+                });
     }
 }
