@@ -30,38 +30,24 @@ class SessionStatusEnum(str, enum.Enum):
     ARCHIVED = "archived"
 
 
-class User(Base):
-    """
-    User model for the AI service.
-    This stores essential user information synced from the backend auth service.
-    Acts as a local reference for user-related AI data (sessions, roadmaps, skills, etc.).
-    """
-    __tablename__ = "users"
-    
-    id = Column(Integer, primary_key=True, index=True)  # Same ID as backend auth service
- 
-    # Relationships - a user can have multiple sessions and skills
-    sessions = relationship("Session", back_populates="user", cascade="all, delete-orphan")
-    skills = relationship("UserSkill", back_populates="user", cascade="all, delete-orphan")
-    
-    def __repr__(self):
-        return f"<User(id={self.id})>"
-
-
 class Session(Base):
     """
     Session model that groups related roadmaps and learning materials.
     Users interact with sessions, and each session contains its associated roadmap.
     This allows users to have multiple learning sessions/journeys.
+    User management is handled by the main backend - we only store user_id references.
     """
     __tablename__ = "sessions"
     
     id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
+    user_id = Column(String(255), nullable=False, index=True)  # Reference to user in main backend
     
     # Session details
     session_name = Column(String(500))  # Optional user-defined name
     description = Column(Text)  # Optional description
+
+    # Messages
+    messages = Column(JSON)  # List of messages
     
     # Status
     status = Column(SQLEnum(SessionStatusEnum), default=SessionStatusEnum.ACTIVE)
@@ -72,7 +58,6 @@ class Session(Base):
     completed_at = Column(DateTime, nullable=True)
     
     # Relationships
-    user = relationship("User", back_populates="sessions")
     roadmap = relationship("Roadmap", back_populates="session", uselist=False, cascade="all, delete-orphan")
     
     def __repr__(self):
@@ -209,11 +194,12 @@ class UserSkill(Base):
     """
     Stores user's skills extracted from CV and updated through progress.
     Helps in personalizing roadmaps and tracking skill development.
+    User management is handled by the main backend - we only store user_id references.
     """
     __tablename__ = "user_skills"
     
     id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
+    user_id = Column(Integer, nullable=False, index=True)  # Reference to user in main backend
     
     # Skill details
     skill_name = Column(String(200), nullable=False)
@@ -227,9 +213,6 @@ class UserSkill(Base):
     # Metadata
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
-    
-    # Relationships
-    user = relationship("User", back_populates="skills")
     
     def __repr__(self):
         return f"<UserSkill(user_id={self.user_id}, skill={self.skill_name}, level={self.skill_level})>"
