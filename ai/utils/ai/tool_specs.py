@@ -122,20 +122,21 @@ TOOL_SPECS: Dict[str, Dict[str, Any]] = {
             "Create comprehensive learning materials for a specific goal within a roadmap. "
             "This generates detailed content including explanations, examples, exercises, and resources. "
             "The materials are contextualized with the previous and next goals to ensure smooth learning progression. "
-            "Use this after a roadmap has been created and the user wants to start learning a specific goal."
+            "Use this after a roadmap has been created and the user wants to start learning a specific goal. "
+            "The user should specify which goal (by number or title) they want to learn."
         ),
-        "ai_required": [],
-        "ai_parameters": {},
+        "ai_required": ["goal_id"],
+        "ai_parameters": {
+            "goal_id": {
+                "type": "integer",
+                "description": "Database ID of the goal to create materials for. Use the 'Goal ID' number from the available goals list in context.",
+                "source": SOURCE_AI
+            }
+        },
         "server_parameters": {
             "session_id": {
                 "type": "integer",
                 "description": "Session ID for context",
-                "source": SOURCE_SERVER,
-                "required": True
-            },
-            "goal_id": {
-                "type": "integer",
-                "description": "ID of the goal to create materials for",
                 "source": SOURCE_SERVER,
                 "required": True
             },

@@ -3,6 +3,25 @@ from sqlalchemy import text
 from db_config.database import init_db, get_db_context, drop_db
 from routes import sessions_router
 from routes.ai_actions import router as ai_router
+import logging
+import sys
+import os
+
+# Enable development mode for auto-reloading prompts
+os.environ['DEBUG'] = 'true'
+
+# Configure logging to show INFO level and above
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    handlers=[
+        logging.StreamHandler(sys.stdout)
+    ]
+)
+
+# Set specific loggers to INFO level
+logging.getLogger('utils.ai.service').setLevel(logging.INFO)
+logging.getLogger('uvicorn.access').setLevel(logging.WARNING)  # Reduce noise from access logs
 
 app = FastAPI(
     title="Drama Llama AI Learning Career Platform",
