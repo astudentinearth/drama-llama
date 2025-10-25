@@ -21,7 +21,7 @@ interface MaterialsDialogProps {
 
 export default function MaterialsDialog({ materials, goalTitle }: MaterialsDialogProps) {
   const [open, setOpen] = useState(false);
-  const [selectedMaterial, setSelectedMaterial] = useState<IMaterial | null>(null);
+  const [selectedMaterial, setSelectedMaterial] = useState<IMaterial | null>(materials[0]);
 
   const getDifficultyColor = (level: string) => {
     switch (level.toLowerCase()) {
@@ -82,7 +82,7 @@ export default function MaterialsDialog({ materials, goalTitle }: MaterialsDialo
                 <div
                   key={material.id}
                   className={`p-3 rounded-lg border cursor-pointer transition-colors hover:bg-accent ${
-                    selectedMaterial?.id === material.id ? "bg-accent" : ""
+                    selectedMaterial?.id === material.id ? "border-primary" : ""
                   }`}
                   onClick={() => setSelectedMaterial(material)}
                 >

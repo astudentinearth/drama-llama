@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { useChatStream } from "./roadmap.hooks";
 import { useSessionMessagesQuery } from "./roadmap.query";
-import { Send, Bot, User, Loader2, CheckCircle, Wrench } from "lucide-react";
+import { Send, Bot, User, Loader2, CheckCircle, Wrench, Sparkles } from "lucide-react";
 import type { IMessage } from "./roadmap.types";
 
 interface ChatMessage {
@@ -71,23 +71,35 @@ export default function ChatPane({ sessionId }: ChatPaneProps) {
     return chatMessage;
   };
 
-  // Load old messages when they're available
+  // Combined effect to handle session changes and message loading
   useEffect(() => {
-    if (oldMessages && oldMessages.length > 0) {
-      const convertedMessages = oldMessages.map(convertApiMessageToChatMessage);
-      setMessages(convertedMessages);
-    } else if (oldMessages && oldMessages.length === 0) {
-      // No old messages, start with empty array
-      setMessages([]);
-    }
-  }, [oldMessages]);
-
-  // Reset messages when session changes
-  useEffect(() => {
-    setMessages([]);
+    console.log(`ChatPane: Session ${sessionId} - Loading messages`, {
+      oldMessages: oldMessages?.length,
+      isLoading: isLoadingMessages
+    });
+    
+    // Clear input and reset stream when session changes
     setInputValue("");
     resetMessage();
-  }, [sessionId, resetMessage]);
+    
+    // Load messages for the current session
+    if (oldMessages !== undefined) {
+      if (oldMessages.length > 0) {
+        const convertedMessages = oldMessages.map(convertApiMessageToChatMessage);
+        console.log(`ChatPane: Setting ${convertedMessages.length} messages for session ${sessionId}`);
+        setMessages(convertedMessages);
+      } else {
+        // No old messages for this session
+        console.log(`ChatPane: No messages for session ${sessionId}`);
+        setMessages([]);
+      }
+    } else if (!isLoadingMessages) {
+      // Messages finished loading but are undefined - likely an error
+      console.log(`ChatPane: Messages undefined for session ${sessionId}, not loading`);
+      setMessages([]);
+    }
+    // If isLoadingMessages is true, don't clear messages yet
+  }, [sessionId, oldMessages, isLoadingMessages, resetMessage]);
 
   const handleSendMessage = async () => {
     if (!inputValue.trim() || isStreaming) return;
@@ -206,24 +218,28 @@ export default function ChatPane({ sessionId }: ChatPaneProps) {
     }
   };
 
+  const getToolDesc = (tool: string) => {
+    switch (tool) {
+      case "createLearningMaterials":
+        return "Generated materials";
+      case "createRoadmapSkeleton":
+        return "Created roadmap";
+    }
+  };
+  
+
   const renderToolCalls = (toolCalls: ChatMessage["toolCalls"]) => {
     if (!toolCalls || toolCalls.length === 0) return null;
 
     return (
       <div className="mt-3 space-y-2">
-        {toolCalls.map((call, index) => (
+        {toolCalls.map((call) => (
           <div
-            key={index}
-            className="flex items-center gap-2 text-sm bg-blue-50 dark:bg-blue-900/20 p-2 rounded"
+            key={call.call_id}
+            className="flex items-center gap-2 text-sm dark:bg-blue-900/20 p-2 rounded-lg bg-primary/10 text-primary border border-primary/50"
           >
-            <Wrench className="w-4 h-4 text-blue-600" />
-            <span className="font-medium">Using tool:</span>
-            <Badge variant="secondary">{call.tool_name}</Badge>
-            {call.arguments.goal_id && (
-              <span className="text-muted-foreground">
-                Goal ID: {call.arguments.goal_id}
-              </span>
-            )}
+            <Sparkles className="w-4 h-4 " />
+            {getToolDesc(call.tool_name)}
           </div>
         ))}
       </div>
@@ -263,11 +279,11 @@ export default function ChatPane({ sessionId }: ChatPaneProps) {
       {/* Header */}
       <div className="p-4 border-b">
         <div className="flex items-center gap-2">
-          <Bot className="w-5 h-5" />
-          <h3 className="font-semibold">AI Learning Assistant</h3>
+          <Sparkles className="w-5 h-5" />
+          <h3 className="font-semibold">Roadmap Assistant</h3>
         </div>
         <p className="text-sm text-muted-foreground mt-1">
-          Ask questions about your learning goals
+          Describe your learning goals to generate a tailored roadmap and study materials.
         </p>
       </div>
 
@@ -304,7 +320,7 @@ export default function ChatPane({ sessionId }: ChatPaneProps) {
               <div
                 className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${
                   message.role === "user"
-                    ? "bg-primary text-primary-foreground"
+                    ? "bg-primary text-primary-foreground hidden"
                     : "bg-muted"
                 }`}
               >
@@ -316,9 +332,9 @@ export default function ChatPane({ sessionId }: ChatPaneProps) {
               </div>
 
               <div
-                className={`rounded-lg p-3 ${
+                className={`rounded-xl border p-3 drop-shadow-sm drop-shadow-black/5 ${
                   message.role === "user"
-                    ? "bg-primary text-primary-foreground"
+                    ? "bg-primary border-primary text-primary-foreground"
                     : "bg-muted"
                 }`}
               >
@@ -331,18 +347,14 @@ export default function ChatPane({ sessionId }: ChatPaneProps) {
                 )}
 
                 {message.isStreaming && (
-                  <div className="flex items-center gap-2 mt-2 text-sm text-muted-foreground">
-                    <Loader2 className="w-3 h-3 animate-spin" />
-                    <span>AI is thinking...</span>
+                  <div className="flex items-center gap-2 animate-pulse mt-2 text-sm text-muted-foreground">
+                    <span>Working on it...</span>
                   </div>
                 )}
 
                 {renderToolCalls(message.toolCalls)}
                 {renderToolResults(message.toolResults)}
 
-                <div className="text-xs text-muted-foreground mt-2 opacity-70">
-                  {message.timestamp.toLocaleTimeString()}
-                </div>
               </div>
             </div>
           </div>

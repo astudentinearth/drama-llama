@@ -29,6 +29,8 @@ export function useSessionMessagesQuery(sessionId: number) {
     queryKey: ["roadmap", "session", sessionId, "messages"],
     queryFn: () => Session(sessionId).getMessages(),
     enabled: !!sessionId,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    gcTime: 10 * 60 * 1000, // 10 minutes (formerly cacheTime)
   });
 }
 

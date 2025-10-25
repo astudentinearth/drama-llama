@@ -66,7 +66,7 @@ export default function SessionDetail() {
             </p>
           </div>
 
-          <div className="bg-card rounded-lg p-6 border">
+          <div className="bg-card rounded-xl drop-shadow-lg drop-shadow-black/5 p-6 border">
             <div className="flex items-center gap-4 mb-4">
               <div className="flex items-center gap-2">
                 <div
