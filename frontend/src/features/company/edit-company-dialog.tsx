@@ -4,6 +4,7 @@ import {
   Dialog,
   DialogContent,
   DialogDescription,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
@@ -26,9 +27,7 @@ export default function EditCompanyDialog({ company }: EditCompanyDialogProps) {
   
   const updateCompanyMutation = useUpdateCompanyMutation();
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    
+  const handleSubmit = () => {
     updateCompanyMutation.mutate(
       {
         companyId: company.id,
@@ -66,8 +65,8 @@ export default function EditCompanyDialog({ company }: EditCompanyDialogProps) {
             Update your company information. Changes will be visible to all users.
           </DialogDescription>
         </DialogHeader>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="space-y-2">
+        <div className="grid gap-4 py-4">
+          <div className="grid gap-2">
             <Label htmlFor="name">Company Name</Label>
             <Input
               id="name"
@@ -77,7 +76,7 @@ export default function EditCompanyDialog({ company }: EditCompanyDialogProps) {
               required
             />
           </div>
-          <div className="space-y-2">
+          <div className="grid gap-2">
             <Label htmlFor="description">Description</Label>
             <Textarea
               id="description"
@@ -87,23 +86,22 @@ export default function EditCompanyDialog({ company }: EditCompanyDialogProps) {
               rows={4}
             />
           </div>
-          <div className="flex justify-end space-x-2">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => setOpen(false)}
-              disabled={updateCompanyMutation.isPending}
-            >
-              Cancel
-            </Button>
-            <Button
-              type="submit"
-              disabled={updateCompanyMutation.isPending || !name.trim()}
-            >
-              {updateCompanyMutation.isPending ? "Updating..." : "Update Company"}
-            </Button>
-          </div>
-        </form>
+        </div>
+        <DialogFooter>
+          <Button
+            variant="outline"
+            onClick={() => setOpen(false)}
+            disabled={updateCompanyMutation.isPending}
+          >
+            Cancel
+          </Button>
+          <Button
+            onClick={handleSubmit}
+            disabled={updateCompanyMutation.isPending || !name.trim()}
+          >
+            {updateCompanyMutation.isPending ? "Updating..." : "Update Company"}
+          </Button>
+        </DialogFooter>
       </DialogContent>
     </Dialog>
   );

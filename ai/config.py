@@ -47,4 +47,5 @@ class Settings(BaseSettings):
 
 
 settings = Settings()
+print(settings.ai_database_url)
 
