@@ -1,6 +1,16 @@
 """AI Models package - contains Prompt class and Pydantic schemas."""
 
 from .Prompt import Prompt
+from .db_models import (
+    Base,
+    SkillLevelEnum,
+    RoadmapStatusEnum,
+    User,
+    Roadmap,
+    RoadmapGoal,
+    LearningMaterial,
+    UserSkill,
+)
 from .schemas import (
     # Enums
     IntentType,
@@ -66,6 +76,16 @@ from .schemas import (
 __all__ = [
     # Prompt class
     "Prompt",
+    
+    # Database Models
+    "Base",
+    "SkillLevelEnum",
+    "RoadmapStatusEnum",
+    "User",
+    "Roadmap",
+    "RoadmapGoal",
+    "LearningMaterial",
+    "UserSkill",
     
     # Enums
     "IntentType",

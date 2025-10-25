@@ -1,13 +1,18 @@
+from models import ChatRequest, ChatResponse
 from models.Prompt import Prompt
 from models.schemas import RoadmapResponse, LearningMaterialResponse
 from services.OllamaClient import OllamaClient
+from utils.tool_decision_engine import ToolDecisionEngine, ToolDecisionContext, ToolCallDecision
 import asyncio
+from typing import Optional, Dict, Any
+import logging
 
+logger = logging.getLogger(__name__)
 """
 When user stated he/she want to apply for a job, how can I develop my self etc. this tool should be triggered.
 This tool briefly takes summary of user request, and the links mentioned.
 """
-async def createRoadmapSkeleton(db, user_request: str, job_listings: list[str], user_summarized_cv: str, user_expertise_domains: list[str]) -> str:
+async def createRoadmapSkeleton(db, user_request: str, job_listings: Optional[list[str]] = None, user_summarized_cv: Optional[str] = None, user_expertise_domains: Optional[list[str]] = None) -> str:
     jobListings = ["this is an example job listing, requiring skills in python, django, rest api, sql, git, docker"]
     
     # 0. load prompt with variables
@@ -78,3 +83,144 @@ async def createLearningMaterials(db, things_to_learn: list[str], end_of_roadmap
         raise Exception(f"Failed to generate learning materials: {async_response.get('error', 'Unknown error')}")
     
     return async_response.get("response", "")
+
+async def master(request: ChatRequest) -> Dict[str, Any]:
+    """
+    Enhanced master function with intelligent tool decision making.
+    
+    This function now uses the ToolDecisionEngine to intelligently determine
+    when and which tools to call based on user intent and context.
+    """
+    try:
+        # Initialize decision engine
+        ollama_client = OllamaClient()
+        decision_engine = ToolDecisionEngine(ollama_client)
+        
+        # Create decision context
+        context = ToolDecisionContext(
+            user_message=request.userPrompt,
+            conversation_history=request.previousMessages,
+            available_tools=["createRoadmapSkeleton", "createLearningMaterials"],
+            previous_tool_calls=[]  # TODO: Extract from conversation history
+        )
+        
+        # Make intelligent tool decision
+        tool_decision = await decision_engine.make_tool_decision(context)
+        
+        logger.info(f"Tool decision: {tool_decision.decision.value} - {tool_decision.reasoning}")
+        
+        # Handle different decision outcomes
+        if tool_decision.decision == ToolCallDecision.DECLINE_REQUEST:
+            return {
+                "response": "I'm sorry, but I can only help with career and skill development topics. Please ask me about learning paths, skill development, or career guidance.",
+                "decision_metadata": {
+                    "decision": tool_decision.decision.value,
+                    "reasoning": tool_decision.reasoning,
+                    "confidence": tool_decision.confidence
+                }
+            }
+        
+        elif tool_decision.decision == ToolCallDecision.CLARIFY_INTENT:
+            clarification_questions = tool_decision.clarification_questions or [
+                "Could you please clarify what you'd like help with? Are you looking for career guidance, skill development, or learning resources?"
+            ]
+            return {
+                "response": f"I'd be happy to help! {clarification_questions[0]}",
+                "decision_metadata": {
+                    "decision": tool_decision.decision.value,
+                    "reasoning": tool_decision.reasoning,
+                    "confidence": tool_decision.confidence,
+                    "clarification_needed": True
+                }
+            }
+        
+        elif tool_decision.decision == ToolCallDecision.CALL_TOOL:
+            # Execute recommended tools
+            tool_results = await decision_engine.execute_tools(
+                tools=tool_decision.recommended_tools,
+                params=tool_decision.extracted_params,
+                context=context
+            )
+            
+            # Generate response based on tool results
+            if tool_results:
+                return await _generate_tool_response(ollama_client, tool_results, request)
+            else:
+                # Fallback to regular chat if no tools were executed
+                return await _generate_regular_response(ollama_client, request)
+        
+        else:  # NO_TOOL
+            # Regular conversation without tools
+            return await _generate_regular_response(ollama_client, request)
+    
+    except Exception as e:
+        logger.error(f"Master function error: {e}")
+        return {
+            "response": "I apologize, but I encountered an error processing your request. Please try again.",
+            "error": str(e),
+            "decision_metadata": {
+                "decision": "error",
+                "reasoning": f"Error occurred: {str(e)}"
+            }
+        }
+
+
+async def _generate_tool_response(ollama_client: OllamaClient, tool_results: list, request: ChatRequest) -> Dict[str, Any]:
+    """Generate response after tool execution."""
+    # Prepare tool context
+    tool_context = "\n\n".join([
+        f"Tool: {result.tool_name}\nStatus: {result.status.value}\nResult: {result.result}" 
+        for result in tool_results if result.status.value == "success"
+    ])
+    
+    # Generate final response
+    final_prompt = f"""Based on the tool execution results below, provide a clear, friendly, and helpful response to the user.
+
+Tool Results:
+{tool_context}
+
+Please format this information in a natural, conversational way that helps the user understand their learning roadmap and next steps."""
+
+    response = await ollama_client.generate(
+        prompt=final_prompt,
+        system_prompt="You are a helpful career development assistant. Present information in a clear, motivating, and well-structured way.",
+        temperature=0.4
+    )
+    
+    return {
+        "response": response.get("response", ""),
+        "tool_results": [
+            {
+                "name": result.tool_name,
+                "status": result.status.value,
+                "result": result.result,
+                "execution_time": result.execution_time
+            }
+            for result in tool_results
+        ],
+        "decision_metadata": {
+            "decision": "call_tool",
+            "tools_executed": [result.tool_name for result in tool_results],
+            "success_count": len([r for r in tool_results if r.status.value == "success"])
+        }
+    }
+
+
+async def _generate_regular_response(ollama_client: OllamaClient, request: ChatRequest) -> Dict[str, Any]:
+    """Generate regular chat response without tools."""
+    prompt = Prompt("master", request)
+    assert prompt is not None, "Prompt 'master' could not be loaded."
+    
+    response = await ollama_client.generate(
+        prompt=prompt.get_user_prompt(),
+        system_prompt=prompt.get_system_prompt(),
+        temperature=0.4
+    )
+    
+    return {
+        "response": response.get("response", ""),
+        "decision_metadata": {
+            "decision": "no_tool",
+            "reasoning": "Regular conversation without tool calls"
+        }
+    }

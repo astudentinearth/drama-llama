@@ -316,8 +316,8 @@ class ResumeEnhancementRequest(BaseModel):
 
 class ChatRequest(BaseModel):
     """Chat request."""
-    message: str
-    conversation_history: List[Dict[str, str]] = []
+    userPrompt: str
+    previousMessages: List[Dict[str, str]] = []
 
 class ChatResponse(BaseModel):
     """Chat response."""
