@@ -1,6 +1,6 @@
 import axios from "axios";
 import { success } from "../../lib/api-util";
-import type { Company } from "./company.types";
+import type { Company, UpdateCompanyDTO } from "./company.types";
 import type { JobListingsResponse } from "../jobs/jobs.types";
 
 const COMPANY_URL = "/api/company";
@@ -32,5 +32,15 @@ export async function getCompanyJobs(companyId: string) {
     return response.data as JobListingsResponse;
   } else {
     throw new Error("Fetching company jobs failed");
+  }
+}
+
+export async function updateCompany(companyId: string, data: UpdateCompanyDTO) {
+  const response = await axios.patch(`${COMPANY_URL}/${companyId}`, data);
+
+  if (success(response)) {
+    return response.data as Company;
+  } else {
+    throw new Error("Updating company failed");
   }
 }

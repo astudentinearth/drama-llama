@@ -1,14 +1,13 @@
 package backend.company;
 
 import backend.auth.AuthContext;
-import backend.auth.Authorize;
+import backend.auth.exception.UnauthorizedException;
 import backend.exception.NotFoundException;
 import backend.jobs.entity.JobListing;
 import backend.jobs.repository.JobListingRepository;
 import lombok.AllArgsConstructor;
-import org.springframework.security.access.annotation.Secured;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.UUID;
@@ -32,5 +31,16 @@ public class CompanyService {
 
     public List<JobListing> getCompanyJobs(UUID companyId) {
         return jobListingRepository.findAllByCompanyId(companyId);
+    }
+
+    @Transactional
+    public Company updateCompany(UUID id, String name, String description) {
+        var currentUser = authContext.getCurrentUser();
+        var company = companyRepository.findById(id).orElseThrow(() -> new NotFoundException(Company.class));
+        if (!company.getUser().is(currentUser)) throw new UnauthorizedException();
+
+        if (name != null) company.setName(name);
+        if (description != null) company.setDescription(description);
+        return companyRepository.save(company);
     }
 }

@@ -3,3 +3,8 @@ export interface Company {
   name: string;
   description: string;
 }
+
+export interface UpdateCompanyDTO {
+  name: string;
+  description: string;
+}

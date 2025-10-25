@@ -2,6 +2,7 @@ package backend.company;
 
 import backend.auth.Authorize;
 import backend.company.dto.CompanyDTO;
+import backend.company.dto.UpdateCompanyDTO;
 import backend.jobs.dto.JobListingsResponse;
 import lombok.AllArgsConstructor;
 import org.modelmapper.ModelMapper;
@@ -39,5 +40,13 @@ public class CompanyController {
         var company = companyService.getMyCompany();
         var dto = modelMapper.map(company, CompanyDTO.class);
         return ResponseEntity.ok(dto);
+    }
+
+    @PatchMapping("/{id}")
+    @PreAuthorize("hasRole('RECRUITER')")
+    public ResponseEntity<CompanyDTO> updateCompany(@PathVariable UUID id, @RequestBody UpdateCompanyDTO dto) {
+        var updated = companyService.updateCompany(id, dto.getName(), dto.getDescription());
+        var response = modelMapper.map(updated, CompanyDTO.class);
+        return ResponseEntity.ok(response);
     }
 }
