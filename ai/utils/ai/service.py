@@ -16,6 +16,7 @@ from models.schemas import (
     RoadmapSkeletonResponse,
     LearningMaterialResponse,
     RoadmapGoalSchema,
+    QuizForGoalResponse,
     LearningExample
 )
 from db_config.crud import (
@@ -29,7 +30,6 @@ from db_config.crud import (
     create_learning_material
 )
 from models.db_models import SkillLevelEnum
-
 
 class AIService:
     """
@@ -96,7 +96,7 @@ class AIService:
         # This prevents the AI from trying to use unavailable functionality
         if has_roadmap:
             # Roadmap exists: User can create learning materials OR create a new roadmap
-            available_tools = ["createLearningMaterials"]
+            available_tools = ["createLearningMaterials", "editRoadmapSkeleton"]
         else:
             # No roadmap: User can ONLY create a roadmap first
             available_tools = ["createRoadmapSkeleton"]
@@ -334,7 +334,52 @@ class AIService:
         self._save_roadmap_to_db(session_id, roadmap_response, tool_arguments, db)
         
         return roadmap_response
-    
+
+    def edit_roadmap_skeleton(
+        self,
+        session_id: int,
+        tool_arguments: Dict[str, Any],
+        db: Session
+    ) -> RoadmapSkeletonResponse:
+        """
+        Execute editRoadmapSkeleton with structured output.
+        Returns validated Pydantic model and saves to database.
+        """
+        # Get the roadmap
+        roadmap = get_roadmap_by_session(db, session_id)
+        if not roadmap:
+            raise ValueError(f"No roadmap found for session {session_id}")
+        # Load the roadmap creation prompt
+        prompt = Prompt('editroadmapskeleton', {
+            'userRequest': tool_arguments.get('userRequest', ''),
+            'currentRoadmap': tool_arguments.get('currentRoadmap', 'Not provided'),
+        })
+        
+        # Get response format from prompt
+        response_format = prompt.get_response_format()
+        
+        # Execute with structured output
+        messages = prompt.get_messages()
+        response = self.client.execute(
+            messages=messages,
+            response_format=response_format,
+            temperature=prompt.get_temperature()
+        )
+        
+        # Parse the JSON response
+        content = response.get_content()
+        try:
+            roadmap_data = json.loads(content)
+        except json.JSONDecodeError as e:
+            raise ValueError(f"Failed to parse roadmap response: {e}")
+        
+        # Validate with Pydantic
+        roadmap_response = RoadmapSkeletonResponse(**roadmap_data)
+        
+        # Save to database
+        self._save_roadmap_to_db(session_id, roadmap_response, tool_arguments, db)
+        return roadmap_response
+
     def execute_material_creation(
         self,
         goal_id: int,
@@ -493,4 +538,38 @@ class AIService:
             temperature=prompt.get_temperature()
         )
         return response.get_content()
+    
+    def execute_quiz_creation(
+        self,
+        goal_id: int,
+        session_id: int,
+        db: Session
+    ) -> QuizForGoalResponse:
+        """Execute quiz creation for a specific goal."""
+        
+        # Get goal information
+        goal = get_goal(db, goal_id)
+        if not goal:
+            raise ValueError(f"Goal {goal_id} not found")
+        
+        # Create prompt for quiz generation
+        prompt = Prompt('createquizforgoal', {
+            'learningGoal': goal.title,
+            'goalDescription': goal.description,
+            'difficultyLevel': goal.skill_level.value
+        })
+        
+        messages = prompt.get_messages()
+        response = self.client.execute(
+            messages=messages,
+            temperature=prompt.get_temperature()
+        )
+        
+        # Parse the response
+        content = response.get_content()
+        try:
+            quiz_data = json.loads(content)
+            return QuizForGoalResponse(**quiz_data)
+        except (json.JSONDecodeError, ValueError) as e:
+            raise ValueError(f"Failed to parse quiz response: {str(e)}")
         

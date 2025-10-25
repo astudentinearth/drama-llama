@@ -79,7 +79,11 @@ from .crud import (
     create_graduation_project_question,
     get_graduation_project_questions_by_session,
     create_graduation_project_submission,
-    get_submissions_by_session
+    get_submissions_by_session,
+    # Quiz operations
+    create_quiz,
+    create_quiz_attempt,
+    submit_quiz_attempt,
 )
 
 __all__ = [
@@ -157,6 +161,11 @@ __all__ = [
     'create_graduation_project_question',
     'get_graduation_project_questions_by_session',
     'create_graduation_project_submission',
-    'get_submissions_by_session'
+    'get_submissions_by_session',
+    
+    # Quiz operations
+    'create_quiz',
+    'create_quiz_attempt',
+    'submit_quiz_attempt',
 ]
 

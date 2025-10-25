@@ -176,11 +176,10 @@ class RoadmapGoalSchema(BaseModel):
 
 
 class RoadmapSkeletonResponse(BaseModel):
-    """Response from createRoadmapSkeleton tool."""
+    """Response from createRoadmapSkeleton or editRoadmapSkeleton tool."""
     goals: List[RoadmapGoalSchema] = Field(..., description="List of learning goals")
     graduation_project: str = Field(..., description="Capstone project description")
     graduation_project_title: str = Field(..., description="Capstone project title")
-
 
 class LearningExample(BaseModel):
     """Example for learning material."""
@@ -271,3 +270,168 @@ class SubmitAnswersResponse(BaseModel):
     submission_ids: List[int] = Field(..., description="Database IDs of created submissions")
     message: str = Field(default="Answers submitted successfully")
     evaluations: Optional[List[SubmissionEvaluation]] = None
+class QuizQuestion(BaseModel):
+    """Quiz question representation."""
+    question: str = Field(..., description="The quiz question text")
+    options: List[str] = Field(..., description="Array of multiple choice options (A, B, C, D)")
+    correctAnswer: str = Field(..., description="The correct answer option (A, B, C, or D)")
+
+class QuizForGoalResponse(BaseModel):
+    """Response from createQuizForGoal tool."""
+    quiz: List[QuizQuestion] = Field(..., description="List of quiz questions")
+
+
+# ============= Quiz Database Models =============
+
+class QuizQuestionCreate(BaseModel):
+    """Request to create a quiz question."""
+    question_text: str = Field(..., description="The quiz question text")
+    question_order: int = Field(..., description="Order within the quiz")
+    options: List[str] = Field(..., min_items=4, max_items=4, description="Exactly 4 multiple choice options")
+    correct_answer: str = Field(..., pattern="^[ABCD]$", description="Correct answer (A, B, C, or D)")
+    explanation: Optional[str] = Field(None, description="Explanation of the correct answer")
+    points: int = Field(1, ge=1, description="Points for correct answer")
+
+
+class QuizQuestionResponse(BaseModel):
+    """Quiz question response."""
+    id: int
+    quiz_id: int
+    question_text: str
+    question_order: int
+    options: List[str]
+    correct_answer: str
+    explanation: Optional[str]
+    points: int
+    created_at: str
+    updated_at: str
+    
+    class Config:
+        from_attributes = True
+
+
+class QuizCreate(BaseModel):
+    """Request to create a quiz."""
+    goal_id: int = Field(..., description="Associated roadmap goal ID")
+    title: str = Field(..., description="Quiz title")
+    description: Optional[str] = Field(None, description="Quiz description")
+    difficulty_level: Optional[SkillLevel] = Field(SkillLevel.BEGINNER, description="Quiz difficulty level")
+    time_limit_minutes: Optional[int] = Field(None, ge=1, description="Time limit in minutes")
+    passing_score_percentage: float = Field(70.0, ge=0.0, le=100.0, description="Passing score percentage")
+    max_attempts: int = Field(3, ge=1, description="Maximum attempts allowed")
+    questions: List[QuizQuestionCreate] = Field(..., min_items=1, description="Quiz questions")
+
+
+class QuizUpdate(BaseModel):
+    """Request to update a quiz."""
+    title: Optional[str] = None
+    description: Optional[str] = None
+    difficulty_level: Optional[SkillLevel] = None
+    time_limit_minutes: Optional[int] = Field(None, ge=1)
+    passing_score_percentage: Optional[float] = Field(None, ge=0.0, le=100.0)
+    max_attempts: Optional[int] = Field(None, ge=1)
+    is_active: Optional[bool] = None
+
+
+class QuizResponse(BaseModel):
+    """Quiz response."""
+    id: int
+    goal_id: int
+    title: str
+    description: Optional[str]
+    difficulty_level: str
+    time_limit_minutes: Optional[int]
+    passing_score_percentage: float
+    max_attempts: int
+    is_active: bool
+    total_questions: int
+    created_at: str
+    updated_at: str
+    questions: List[QuizQuestionResponse] = []
+    
+    class Config:
+        from_attributes = True
+
+
+class QuizListResponse(BaseModel):
+    """List of quizzes response."""
+    quizzes: List[QuizResponse]
+    total: int
+    skip: int
+    limit: int
+
+
+class QuizAttemptCreate(BaseModel):
+    """Request to start a quiz attempt."""
+    quiz_id: int = Field(..., description="Quiz ID to attempt")
+    user_id: str = Field(..., description="User ID attempting the quiz")
+
+
+class QuizAnswerSubmit(BaseModel):
+    """Request to submit an answer to a quiz question."""
+    question_id: int = Field(..., description="Question ID")
+    selected_answer: str = Field(..., pattern="^[ABCD]$", description="Selected answer (A, B, C, or D)")
+    time_spent_seconds: Optional[int] = Field(0, ge=0, description="Time spent on this question")
+
+
+class QuizAttemptSubmit(BaseModel):
+    """Request to submit a completed quiz attempt."""
+    attempt_id: int = Field(..., description="Attempt ID")
+    answers: List[QuizAnswerSubmit] = Field(..., description="All answers for the quiz")
+
+
+class QuizAnswerResponse(BaseModel):
+    """Quiz answer response."""
+    id: int
+    attempt_id: int
+    question_id: int
+    selected_answer: Optional[str]
+    is_correct: bool
+    points_earned: int
+    time_spent_seconds: int
+    created_at: str
+    updated_at: str
+    
+    class Config:
+        from_attributes = True
+
+
+class QuizAttemptResponse(BaseModel):
+    """Quiz attempt response."""
+    id: int
+    quiz_id: int
+    user_id: str
+    attempt_number: int
+    started_at: str
+    completed_at: Optional[str]
+    total_questions: int
+    correct_answers: int
+    score_percentage: float
+    passed: bool
+    time_spent_minutes: int
+    status: str
+    created_at: str
+    updated_at: str
+    answers: List[QuizAnswerResponse] = []
+    
+    class Config:
+        from_attributes = True
+
+
+class QuizAttemptListResponse(BaseModel):
+    """List of quiz attempts response."""
+    attempts: List[QuizAttemptResponse]
+    total: int
+    skip: int
+    limit: int
+
+
+class QuizStatsResponse(BaseModel):
+    """Quiz statistics response."""
+    quiz_id: int
+    total_attempts: int
+    average_score: float
+    pass_rate: float
+    best_score: float
+    total_questions: int
+    is_active: bool

@@ -11,14 +11,27 @@ from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session
 from pydantic import BaseModel, Field
 from utils.pdf_parse import extract_text_from_pdf
-from db_config import get_db, add_message_to_session, get_session
+from db_config import (
+    get_db, 
+    add_message_to_session, 
+    get_session,
+    # Quiz operations
+    create_quiz,
+    create_quiz_attempt,
+    submit_quiz_attempt
+)
 from models.schemas import (
     AIToolResponse,
     RoadmapSkeletonResponse,
     LearningMaterialResponse,
     APIResponse,
     MessageRole,
-    ToolCallInstruction
+    ToolCallInstruction,
+    QuizCreate,
+    QuizResponse,
+    QuizAttemptCreate,
+    QuizAttemptResponse,
+    QuizAttemptSubmit
 )
 from utils.ai.service import AIService
 from utils.groq_client import GroqClient
@@ -308,6 +321,76 @@ def execute_create_roadmap(
         )
 
 
+@router.post("/sessions/{session_id}/execute-tool/editRoadmapSkeleton", response_model=APIResponse)
+def execute_edit_roadmap(
+    session_id: int,
+    request: ExecuteToolRequest,
+    db: Session = Depends(get_db),
+    ai_service: AIService = Depends(get_ai_service)
+):
+    """
+    Execute createRoadmapSkeleton tool to generate a learning roadmap.
+    
+    This endpoint:
+    1. Executes the roadmap creation with AI
+    2. Saves roadmap and goals to database
+    3. Returns structured roadmap response
+    
+    Args:
+        session_id: Session ID
+        request: Tool execution request with arguments
+    
+    Returns:
+        APIResponse with roadmap data
+    """
+    # Verify session exists
+    session = get_session(db, session_id)
+    if not session:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Session {session_id} not found"
+        )
+    
+    try:
+        # Execute roadmap creation
+        roadmap_response = ai_service.execute_roadmap_creation(
+            session_id=session_id,
+            tool_arguments=request.tool_arguments,
+            db=db
+        )
+        
+        # Save tool execution to message history
+        add_message_to_session(
+            db=db,
+            session_id=session_id,
+            role=MessageRole.ASSISTANT.value,
+            content=f"Created roadmap with {len(roadmap_response.goals)} goals",
+            metadata={
+                'tool': 'editRoadmapSkeleton',
+                'goals_count': len(roadmap_response.goals),
+                'graduation_project': roadmap_response.graduation_project_title
+            }
+        )
+        
+        return APIResponse(
+            success=True,
+            data={
+                'roadmap': roadmap_response.dict(),
+                'message': f'Successfully created roadmap with {len(roadmap_response.goals)} goals'
+            }
+        )
+        
+    except ValueError as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e)
+        )
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to create roadmap: {str(e)}"
+        )
+
 @router.post("/sessions/{session_id}/execute-tool/createLearningMaterials", response_model=APIResponse)
 def execute_create_materials(
     session_id: int,
@@ -500,7 +583,9 @@ def get_tool_event_name(tool_name: str) -> str:
     """
     tool_event_map = {
         'createRoadmapSkeleton': 'roadmap_skeleton',
-        'createLearningMaterials': 'learning_materials'
+        'createLearningMaterials': 'learning_materials',
+        'editRoadmapSkeleton': "roadmap_skeleton",
+        'createQuizForGoal': 'quiz_for_goal'
     }
     return tool_event_map.get(tool_name, tool_name.lower())
 
@@ -731,6 +816,164 @@ def _execute_tool_call_sync(
                 'message': f'Successfully created learning materials: {material_response.title}'
             }
     
+    elif tool_name == 'createQuizForGoal':
+        # Get goal_id from arguments
+        goal_id = arguments.get('goal_id')
+        if not goal_id:
+            raise ValueError("goal_id is required for createQuizForGoal")
+        
+        # Execute quiz creation using AI service
+        quiz_response = ai_service.execute_quiz_creation(
+            goal_id=goal_id,
+            session_id=session_id,
+            db=db
+        )
+        
+        # Save tool execution to message history
+        add_message_to_session(
+            db=db,
+            session_id=session_id,
+            role=MessageRole.ASSISTANT.value,
+            content=f"Created quiz with {len(quiz_response.quiz)} questions",
+            metadata={
+                'tool': 'createQuizForGoal',
+                'goal_id': goal_id,
+                'quiz_questions': len(quiz_response.quiz)
+            }
+        )
+        
+        return {
+            'success': True,
+            'operation': 'createQuizForGoal',
+            'data': quiz_response.dict(),
+            'message': f'Successfully created quiz with {len(quiz_response.quiz)} questions'
+        }
+    elif tool_name == 'editRoadmapSkeleton':
+        # Execute roadmap skeleton editing
+        roadmap_response = ai_service.execute_roadmap_skeleton_editing(
+            session_id=session_id,
+            tool_arguments=arguments,
+            db=db
+        )
+        
+        return {
+            'success': True,
+            'operation': 'editRoadmapSkeleton',
+            'data': roadmap_response.dict(),
+            'message': f'Successfully edited roadmap skeleton with {len(roadmap_response.goals)} goals'
+        }
     else:
         raise ValueError(f"Unknown tool: {tool_name}")
+
+
+# ============================================================================
+# QUIZ ENDPOINTS
+# ============================================================================
+
+@router.post("/sessions/{session_id}/quizzes", response_model=APIResponse)
+async def create_quiz_endpoint(
+    session_id: int,
+    quiz_data: QuizCreate,
+    db: Session = Depends(get_db)
+):
+    """Create a new quiz for a learning goal in a session."""
+    try:
+        # Convert questions data to the format expected by create_quiz
+        questions_data = []
+        for question in quiz_data.questions:
+            questions_data.append({
+                'question_text': question.question_text,
+                'options': question.options,
+                'correct_answer': question.correct_answer,
+                'explanation': question.explanation,
+                'points': question.points
+            })
+        
+        quiz = create_quiz(
+            db=db,
+            goal_id=quiz_data.goal_id,
+            title=quiz_data.title,
+            description=quiz_data.description,
+            difficulty_level=quiz_data.difficulty_level,
+            time_limit_minutes=quiz_data.time_limit_minutes,
+            passing_score_percentage=quiz_data.passing_score_percentage,
+            max_attempts=quiz_data.max_attempts,
+            questions_data=questions_data
+        )
+        
+        return APIResponse(
+            success=True,
+            data=QuizResponse.from_orm(quiz),
+            message="Quiz created successfully"
+        )
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Failed to create quiz: {str(e)}"
+        )
+
+
+@router.post("/sessions/{session_id}/quizzes/{quiz_id}/attempts", response_model=APIResponse)
+async def start_quiz_attempt_endpoint(
+    session_id: int,
+    quiz_id: int,
+    attempt_data: QuizAttemptCreate,
+    db: Session = Depends(get_db)
+):
+    """Start a new quiz attempt in a session."""
+    try:
+        attempt = create_quiz_attempt(db, quiz_id, attempt_data.user_id)
+        
+        return APIResponse(
+            success=True,
+            data=QuizAttemptResponse.from_orm(attempt),
+            message="Quiz attempt started successfully"
+        )
+    except ValueError as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e)
+        )
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to start quiz attempt: {str(e)}"
+        )
+
+
+@router.post("/sessions/{session_id}/quiz-attempts/{attempt_id}/submit", response_model=APIResponse)
+async def submit_quiz_attempt_endpoint(
+    session_id: int,
+    attempt_id: int,
+    submission_data: QuizAttemptSubmit,
+    db: Session = Depends(get_db)
+):
+    """Submit a completed quiz attempt in a session."""
+    try:
+        # Convert answers to the format expected by submit_quiz_attempt
+        answers = []
+        for answer in submission_data.answers:
+            answers.append({
+                'question_id': answer.question_id,
+                'selected_answer': answer.selected_answer,
+                'time_spent_seconds': answer.time_spent_seconds
+            })
+        
+        attempt = submit_quiz_attempt(db, attempt_id, answers)
+        
+        return APIResponse(
+            success=True,
+            data=QuizAttemptResponse.from_orm(attempt),
+            message="Quiz attempt submitted successfully"
+        )
+    except ValueError as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e)
+        )
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to submit quiz attempt: {str(e)}"
+        )
 

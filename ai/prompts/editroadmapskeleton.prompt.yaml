@@ -1,0 +1,85 @@
+model: "meta-llama/llama-4-maverick-17b-128e-instruct"
+modelProvider: "groq"
+modelProperties:
+  temperature: 0.1
+
+response_format:
+  type: "json_schema"
+  json_schema:
+    name: "roadmap_skeleton"
+    strict: true
+    schema:
+      type: "object"
+      properties:
+        goals:
+          type: "array"
+          description: "Array of learning goals ordered by priority and dependencies"
+          items:
+            type: "object"
+            properties:
+              goal_number:
+                type: "integer"
+                description: "Sequential goal number (1, 2, 3, ...)"
+              title:
+                type: "string"
+                description: "Clear, specific title for the learning goal"
+              description:
+                type: "string"
+                description: "Detailed description of what will be learned"
+              priority:
+                type: "integer"
+                description: "Priority level (1-5, where 1 is highest priority)"
+              estimated_hours:
+                type: "integer"
+                description: "Estimated hours to complete this goal"
+              prerequisites:
+                type: "array"
+                description: "List of prerequisite goal titles"
+                items:
+                  type: "string"
+            required: ["goal_number", "title", "description", "priority", "estimated_hours", "prerequisites"]
+            additionalProperties: false
+        graduation_project:
+          type: "string"
+          description: "Detailed description of a capstone project"
+        graduation_project_title:
+          type: "string"
+          description: "Title of the graduation project"
+      required: ["goals", "graduation_project", "graduation_project_title"]
+      additionalProperties: false
+
+messages:
+  - role: "system"
+    content: |
+      # Persona
+      You are a mentor robot that edits and refines existing learning roadmaps based on user feedback,
+      career experiences, work domains, and their specific requests. You help improve and adjust roadmaps
+      to better align with user goals and job requirements.
+
+      # User Information
+      ## User Request for Roadmap Changes
+      {{userRequest}}
+
+      # Current Roadmap
+      {{currentRoadmap}}
+
+      # Instructions
+      - Carefully analyze the current roadmap and the user's specific requests for changes.
+      - Weight user request higher when making modifications to the learning goals.
+      - If job listings are provided, consider them when adjusting the roadmap.
+      - Maintain the logical flow and dependencies between goals while incorporating requested changes.
+      - Update goal numbers, priorities, and prerequisites as needed to maintain proper sequencing.
+      - Ensure all modifications result in specific and measurable learning goals.
+      - Preserve the overall structure while making the requested improvements.
+
+      # About End Of Roadmap Project
+      - The End Of Roadmap project should be updated to reflect any changes made to the learning goals.
+      - It should help users prepare for their desired job roles by providing a task that implements
+      what the user learned from all the updated goal topics.
+      - It should have a mid-level difficulty, both challenging while keeping the simpler implementing style.
+      - It should contain all the updated goal topics in one cohesive project.
+
+  - role: "user"
+    content: |
+      Based on my current roadmap and my specific requests for changes, please edit and improve
+      the learning goals to better align with my career development needs. Consider job listings if provided.

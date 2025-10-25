@@ -139,6 +139,7 @@ class RoadmapGoal(Base):
     # Relationships
     roadmap = relationship("Roadmap", back_populates="goals")
     learning_materials = relationship("LearningMaterial", back_populates="goal", cascade="all, delete-orphan")
+    quizzes = relationship("Quiz", back_populates="goal", cascade="all, delete-orphan")
     
     def __repr__(self):
         return f"<RoadmapGoal(id={self.id}, title={self.title}, completed={self.is_completed})>"
@@ -256,16 +257,6 @@ class GraduationProjectQuestion(Base):
     answer_min_chars = Column(Integer, nullable=False, default=500)
     answer_max_chars = Column(Integer, nullable=False, default=2500)
     requires_material_citations = Column(Boolean, nullable=False, default=False)
-    
-    # Metadata
-    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
-    
-    # Relationships
-    submissions = relationship("GraduationProjectSubmission", back_populates="question", cascade="all, delete-orphan")
-    
-    def __repr__(self):
-        return f"<GraduationProjectQuestion(id={self.id}, question_id={self.question_id}, difficulty={self.difficulty})>"
 
 
 class GraduationProjectSubmission(Base):
@@ -297,3 +288,146 @@ class GraduationProjectSubmission(Base):
     
     def __repr__(self):
         return f"<GraduationProjectSubmission(id={self.id}, question_id={self.question_id}, session_id={self.session_id})>"
+
+
+class Quiz(Base):
+    """
+    Stores quiz information generated for specific learning goals.
+    Each quiz is associated with a roadmap goal and contains multiple questions.
+    """
+    __tablename__ = "quizzes"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    goal_id = Column(Integer, ForeignKey("roadmap_goals.id", ondelete="CASCADE"), nullable=False, index=True)
+    
+    # Quiz details
+    title = Column(String(500), nullable=False)
+    description = Column(Text)
+    difficulty_level = Column(SQLEnum(SkillLevelEnum), default=SkillLevelEnum.BEGINNER)
+    
+    # Quiz settings
+    time_limit_minutes = Column(Integer)  # Optional time limit
+    passing_score_percentage = Column(Float, default=70.0)  # Default 70% to pass
+    max_attempts = Column(Integer, default=3)  # Maximum attempts allowed
+    
+    # Progress tracking
+    is_active = Column(Boolean, default=True)
+    total_questions = Column(Integer, default=0)
+    
+    # Metadata
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+    
+    # Relationships
+    goal = relationship("RoadmapGoal", back_populates="quizzes")
+    questions = relationship("QuizQuestion", back_populates="quiz", cascade="all, delete-orphan")
+    attempts = relationship("QuizAttempt", back_populates="quiz", cascade="all, delete-orphan")
+    
+    def __repr__(self):
+        return f"<Quiz(id={self.id}, goal_id={self.goal_id}, title={self.title})>"
+
+
+class QuizQuestion(Base):
+    """
+    Stores individual quiz questions with multiple choice options.
+    Each question belongs to a quiz and has exactly 4 options (A, B, C, D).
+    """
+    __tablename__ = "quiz_questions"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    quiz_id = Column(Integer, ForeignKey("quizzes.id", ondelete="CASCADE"), nullable=False, index=True)
+    
+    # Question details
+    question_text = Column(Text, nullable=False)
+    question_order = Column(Integer, nullable=False)  # Order within the quiz
+    
+    # Multiple choice options (stored as JSON array)
+    options = Column(JSON, nullable=False)  # ["Option A", "Option B", "Option C", "Option D"]
+    correct_answer = Column(String(1), nullable=False)  # "A", "B", "C", or "D"
+    explanation = Column(Text)  # Explanation of why the correct answer is right
+    
+    # Question metadata
+    difficulty_level = Column(SQLEnum(SkillLevelEnum), default=SkillLevelEnum.BEGINNER)
+    points = Column(Integer, default=1)  # Points for correct answer
+    
+    # Metadata
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+    
+    # Relationships
+    quiz = relationship("Quiz", back_populates="questions")
+    answers = relationship("QuizAnswer", back_populates="question", cascade="all, delete-orphan")
+    
+    def __repr__(self):
+        return f"<QuizQuestion(id={self.id}, quiz_id={self.quiz_id}, order={self.question_order})>"
+
+
+class QuizAttempt(Base):
+    """
+    Stores user attempts at taking quizzes.
+    Tracks progress, scores, and completion status.
+    """
+    __tablename__ = "quiz_attempts"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    quiz_id = Column(Integer, ForeignKey("quizzes.id", ondelete="CASCADE"), nullable=False, index=True)
+    user_id = Column(String(255), nullable=False, index=True)  # Reference to user in main backend
+    
+    # Attempt details
+    attempt_number = Column(Integer, nullable=False)  # 1st, 2nd, 3rd attempt, etc.
+    started_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    completed_at = Column(DateTime, nullable=True)
+    
+    # Scoring
+    total_questions = Column(Integer, default=0)
+    correct_answers = Column(Integer, default=0)
+    score_percentage = Column(Float, default=0.0)
+    passed = Column(Boolean, default=False)
+    
+    # Time tracking
+    time_spent_minutes = Column(Integer, default=0)
+    
+    # Status
+    status = Column(String(20), default="in_progress")  # "in_progress", "completed", "abandoned"
+    
+    # Metadata
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+    
+    # Relationships
+    quiz = relationship("Quiz", back_populates="attempts")
+    answers = relationship("QuizAnswer", back_populates="attempt", cascade="all, delete-orphan")
+    
+    def __repr__(self):
+        return f"<QuizAttempt(id={self.id}, quiz_id={self.quiz_id}, user_id={self.user_id}, attempt={self.attempt_number})>"
+
+
+class QuizAnswer(Base):
+    """
+    Stores individual answers to quiz questions within an attempt.
+    Links questions, attempts, and user responses.
+    """
+    __tablename__ = "quiz_answers"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    attempt_id = Column(Integer, ForeignKey("quiz_attempts.id", ondelete="CASCADE"), nullable=False, index=True)
+    question_id = Column(Integer, ForeignKey("quiz_questions.id", ondelete="CASCADE"), nullable=False, index=True)
+    
+    # Answer details
+    selected_answer = Column(String(1))  # "A", "B", "C", "D", or None if not answered
+    is_correct = Column(Boolean, default=False)
+    points_earned = Column(Integer, default=0)
+    
+    # Time tracking
+    time_spent_seconds = Column(Integer, default=0)
+    
+    # Metadata
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+    
+    # Relationships
+    attempt = relationship("QuizAttempt", back_populates="answers")
+    question = relationship("QuizQuestion", back_populates="answers")
+    
+    def __repr__(self):
+        return f"<QuizAnswer(id={self.id}, attempt_id={self.attempt_id}, question_id={self.question_id}, selected={self.selected_answer})>"

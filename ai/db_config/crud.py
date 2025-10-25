@@ -19,6 +19,10 @@ from models.db_models import (
     RoadmapGoal,
     LearningMaterial,
     UserSkill,
+    Quiz,
+    QuizQuestion,
+    QuizAttempt,
+    QuizAnswer,
     SessionStatusEnum,
     RoadmapStatusEnum,
     SkillLevelEnum
@@ -1010,6 +1014,175 @@ def create_graduation_project_question(
     db.refresh(question)
     return question
 
+# QUIZ OPERATIONS
+# ============================================================================
+
+def create_quiz(
+    db: Session,
+    goal_id: int,
+    title: str,
+    description: Optional[str] = None,
+    difficulty_level: SkillLevelEnum = SkillLevelEnum.BEGINNER,
+    time_limit_minutes: Optional[int] = None,
+    passing_score_percentage: float = 70.0,
+    max_attempts: int = 3,
+    questions_data: Optional[List[Dict[str, Any]]] = None
+) -> Quiz:
+    """Create a new quiz with questions."""
+    quiz = Quiz(
+        goal_id=goal_id,
+        title=title,
+        description=description,
+        difficulty_level=difficulty_level,
+        time_limit_minutes=time_limit_minutes,
+        passing_score_percentage=passing_score_percentage,
+        max_attempts=max_attempts,
+        total_questions=len(questions_data) if questions_data else 0
+    )
+    db.add(quiz)
+    db.commit()
+    db.refresh(quiz)
+    
+    # Add questions if provided
+    if questions_data:
+        for i, question_data in enumerate(questions_data):
+            create_quiz_question(
+                db=db,
+                quiz_id=quiz.id,
+                question_text=question_data['question_text'],
+                question_order=i + 1,
+                options=question_data['options'],
+                correct_answer=question_data['correct_answer'],
+                explanation=question_data.get('explanation'),
+                difficulty_level=question_data.get('difficulty_level', difficulty_level),
+                points=question_data.get('points', 1)
+            )
+        
+        # Update total questions count
+        quiz.total_questions = len(questions_data)
+        db.commit()
+        db.refresh(quiz)
+    
+    return quiz
+
+
+def get_quiz(db: Session, quiz_id: int) -> Optional[Quiz]:
+    """Get a quiz by ID."""
+    return db.query(Quiz).filter(Quiz.id == quiz_id).first()
+
+
+def get_quizzes_by_goal(
+    db: Session,
+    goal_id: int,
+    active_only: bool = True,
+    skip: int = 0,
+    limit: int = 100
+) -> List[Quiz]:
+    """Get all quizzes for a goal."""
+    query = db.query(Quiz).filter(Quiz.goal_id == goal_id)
+    
+    if active_only:
+        query = query.filter(Quiz.is_active == True)
+    
+    return query.order_by(desc(Quiz.created_at)).offset(skip).limit(limit).all()
+
+
+def get_quizzes_by_roadmap(
+    db: Session,
+    roadmap_id: int,
+    active_only: bool = True,
+    skip: int = 0,
+    limit: int = 100
+) -> List[Quiz]:
+    """Get all quizzes for a roadmap (across all goals)."""
+    query = db.query(Quiz).join(RoadmapGoal).filter(
+        RoadmapGoal.roadmap_id == roadmap_id
+    )
+    
+    if active_only:
+        query = query.filter(Quiz.is_active == True)
+    
+    return query.order_by(desc(Quiz.created_at)).offset(skip).limit(limit).all()
+
+
+def update_quiz(
+    db: Session,
+    quiz_id: int,
+    **kwargs
+) -> Optional[Quiz]:
+    """Update quiz fields."""
+    quiz = get_quiz(db, quiz_id)
+    if not quiz:
+        return None
+    
+    allowed_fields = [
+        'title', 'description', 'difficulty_level', 'time_limit_minutes',
+        'passing_score_percentage', 'max_attempts', 'is_active'
+    ]
+    
+    for field, value in kwargs.items():
+        if field in allowed_fields and value is not None:
+            setattr(quiz, field, value)
+    
+    db.commit()
+    db.refresh(quiz)
+    return quiz
+
+
+def delete_quiz(db: Session, quiz_id: int) -> bool:
+    """Delete a quiz (cascades to questions, attempts, and answers)."""
+    quiz = get_quiz(db, quiz_id)
+    if not quiz:
+        return False
+    
+    db.delete(quiz)
+    db.commit()
+    return True
+
+
+def count_quizzes_by_goal(
+    db: Session,
+    goal_id: int,
+    active_only: bool = True
+) -> int:
+    """Count quizzes for a goal."""
+    query = db.query(Quiz).filter(Quiz.goal_id == goal_id)
+    if active_only:
+        query = query.filter(Quiz.is_active == True)
+    return query.count()
+
+
+# ============================================================================
+# QUIZ QUESTION OPERATIONS
+# ============================================================================
+
+def create_quiz_question(
+    db: Session,
+    quiz_id: int,
+    question_text: str,
+    question_order: int,
+    options: List[str],
+    correct_answer: str,
+    explanation: Optional[str] = None,
+    difficulty_level: SkillLevelEnum = SkillLevelEnum.BEGINNER,
+    points: int = 1
+) -> QuizQuestion:
+    """Create a new quiz question."""
+    question = QuizQuestion(
+        quiz_id=quiz_id,
+        question_text=question_text,
+        question_order=question_order,
+        options=options,
+        correct_answer=correct_answer,
+        explanation=explanation,
+        difficulty_level=difficulty_level,
+        points=points
+    )
+    db.add(question)
+    db.commit()
+    db.refresh(question)
+    return question
+
 
 def get_graduation_project_questions_by_session(
     db: Session,
@@ -1097,4 +1270,338 @@ def delete_graduation_project_questions_by_session(
     db.commit()
     return count
 
+
+def get_quiz_question(db: Session, question_id: int) -> Optional[QuizQuestion]:
+    """Get a quiz question by ID."""
+    return db.query(QuizQuestion).filter(QuizQuestion.id == question_id).first()
+
+
+def get_questions_by_quiz(
+    db: Session,
+    quiz_id: int,
+    skip: int = 0,
+    limit: int = 100
+) -> List[QuizQuestion]:
+    """Get all questions for a quiz."""
+    return db.query(QuizQuestion).filter(
+        QuizQuestion.quiz_id == quiz_id
+    ).order_by(QuizQuestion.question_order).offset(skip).limit(limit).all()
+
+
+def update_quiz_question(
+    db: Session,
+    question_id: int,
+    **kwargs
+) -> Optional[QuizQuestion]:
+    """Update quiz question fields."""
+    question = get_quiz_question(db, question_id)
+    if not question:
+        return None
+    
+    allowed_fields = [
+        'question_text', 'question_order', 'options', 'correct_answer',
+        'explanation', 'difficulty_level', 'points'
+    ]
+    
+    for field, value in kwargs.items():
+        if field in allowed_fields and value is not None:
+            setattr(question, field, value)
+    
+    db.commit()
+    db.refresh(question)
+    return question
+
+
+def delete_quiz_question(db: Session, question_id: int) -> bool:
+    """Delete a quiz question (cascades to answers)."""
+    question = get_quiz_question(db, question_id)
+    if not question:
+        return False
+    
+    db.delete(question)
+    db.commit()
+    return True
+
+
+def count_questions_by_quiz(db: Session, quiz_id: int) -> int:
+    """Count questions in a quiz."""
+    return db.query(QuizQuestion).filter(QuizQuestion.quiz_id == quiz_id).count()
+
+
+# ============================================================================
+# QUIZ ATTEMPT OPERATIONS
+# ============================================================================
+
+def create_quiz_attempt(
+    db: Session,
+    quiz_id: int,
+    user_id: str
+) -> QuizAttempt:
+    """Start a new quiz attempt."""
+    # Get the next attempt number for this user and quiz
+    last_attempt = db.query(QuizAttempt).filter(
+        and_(
+            QuizAttempt.quiz_id == quiz_id,
+            QuizAttempt.user_id == user_id
+        )
+    ).order_by(desc(QuizAttempt.attempt_number)).first()
+    
+    attempt_number = (last_attempt.attempt_number + 1) if last_attempt else 1
+    
+    # Get quiz details
+    quiz = get_quiz(db, quiz_id)
+    if not quiz:
+        raise ValueError(f"Quiz {quiz_id} not found")
+    
+    # Check if user has exceeded max attempts
+    if last_attempt and last_attempt.attempt_number >= quiz.max_attempts:
+        raise ValueError(f"Maximum attempts ({quiz.max_attempts}) exceeded for this quiz")
+    
+    attempt = QuizAttempt(
+        quiz_id=quiz_id,
+        user_id=user_id,
+        attempt_number=attempt_number,
+        total_questions=quiz.total_questions
+    )
+    db.add(attempt)
+    db.commit()
+    db.refresh(attempt)
+    return attempt
+
+
+def get_quiz_attempt(db: Session, attempt_id: int) -> Optional[QuizAttempt]:
+    """Get a quiz attempt by ID."""
+    return db.query(QuizAttempt).filter(QuizAttempt.id == attempt_id).first()
+
+
+def get_attempts_by_quiz(
+    db: Session,
+    quiz_id: int,
+    user_id: Optional[str] = None,
+    skip: int = 0,
+    limit: int = 100
+) -> List[QuizAttempt]:
+    """Get quiz attempts for a quiz."""
+    query = db.query(QuizAttempt).filter(QuizAttempt.quiz_id == quiz_id)
+    
+    if user_id:
+        query = query.filter(QuizAttempt.user_id == user_id)
+    
+    return query.order_by(desc(QuizAttempt.started_at)).offset(skip).limit(limit).all()
+
+
+def get_attempts_by_user(
+    db: Session,
+    user_id: str,
+    quiz_id: Optional[int] = None,
+    skip: int = 0,
+    limit: int = 100
+) -> List[QuizAttempt]:
+    """Get quiz attempts for a user."""
+    query = db.query(QuizAttempt).filter(QuizAttempt.user_id == user_id)
+    
+    if quiz_id:
+        query = query.filter(QuizAttempt.quiz_id == quiz_id)
+    
+    return query.order_by(desc(QuizAttempt.started_at)).offset(skip).limit(limit).all()
+
+
+def submit_quiz_attempt(
+    db: Session,
+    attempt_id: int,
+    answers: List[Dict[str, Any]]
+) -> QuizAttempt:
+    """Submit a completed quiz attempt with answers."""
+    attempt = get_quiz_attempt(db, attempt_id)
+    if not attempt:
+        raise ValueError(f"Quiz attempt {attempt_id} not found")
+    
+    if attempt.status != "in_progress":
+        raise ValueError("Quiz attempt is not in progress")
+    
+    # Get quiz questions
+    questions = get_questions_by_quiz(db, attempt.quiz_id)
+    question_map = {q.id: q for q in questions}
+    
+    correct_answers = 0
+    total_points = 0
+    earned_points = 0
+    
+    # Process each answer
+    for answer_data in answers:
+        question_id = answer_data['question_id']
+        selected_answer = answer_data['selected_answer']
+        time_spent_seconds = answer_data.get('time_spent_seconds', 0)
+        
+        question = question_map.get(question_id)
+        if not question:
+            continue
+        
+        is_correct = selected_answer == question.correct_answer
+        points_earned = question.points if is_correct else 0
+        
+        # Create answer record
+        answer = QuizAnswer(
+            attempt_id=attempt_id,
+            question_id=question_id,
+            selected_answer=selected_answer,
+            is_correct=is_correct,
+            points_earned=points_earned,
+            time_spent_seconds=time_spent_seconds
+        )
+        db.add(answer)
+        
+        if is_correct:
+            correct_answers += 1
+        total_points += question.points
+        earned_points += points_earned
+    
+    # Calculate score
+    score_percentage = (earned_points / total_points * 100) if total_points > 0 else 0
+    
+    # Get quiz passing score
+    quiz = get_quiz(db, attempt.quiz_id)
+    passed = score_percentage >= quiz.passing_score_percentage
+    
+    # Update attempt
+    attempt.completed_at = datetime.utcnow()
+    attempt.correct_answers = correct_answers
+    attempt.score_percentage = score_percentage
+    attempt.passed = passed
+    attempt.status = "completed"
+    
+    # Calculate time spent
+    if attempt.started_at:
+        time_delta = attempt.completed_at - attempt.started_at
+        attempt.time_spent_minutes = int(time_delta.total_seconds() / 60)
+    
+    db.commit()
+    db.refresh(attempt)
+    return attempt
+
+
+def abandon_quiz_attempt(
+    db: Session,
+    attempt_id: int
+) -> QuizAttempt:
+    """Abandon a quiz attempt."""
+    attempt = get_quiz_attempt(db, attempt_id)
+    if not attempt:
+        raise ValueError(f"Quiz attempt {attempt_id} not found")
+    
+    attempt.status = "abandoned"
+    attempt.completed_at = datetime.utcnow()
+    
+    # Calculate time spent
+    if attempt.started_at:
+        time_delta = attempt.completed_at - attempt.started_at
+        attempt.time_spent_minutes = int(time_delta.total_seconds() / 60)
+    
+    db.commit()
+    db.refresh(attempt)
+    return attempt
+
+
+def delete_quiz_attempt(db: Session, attempt_id: int) -> bool:
+    """Delete a quiz attempt (cascades to answers)."""
+    attempt = get_quiz_attempt(db, attempt_id)
+    if not attempt:
+        return False
+    
+    db.delete(attempt)
+    db.commit()
+    return True
+
+
+# ============================================================================
+# QUIZ ANSWER OPERATIONS
+# ============================================================================
+
+def get_answers_by_attempt(
+    db: Session,
+    attempt_id: int
+) -> List[QuizAnswer]:
+    """Get all answers for a quiz attempt."""
+    return db.query(QuizAnswer).filter(
+        QuizAnswer.attempt_id == attempt_id
+    ).order_by(QuizAnswer.question_id).all()
+
+
+def get_answer_by_question_and_attempt(
+    db: Session,
+    question_id: int,
+    attempt_id: int
+) -> Optional[QuizAnswer]:
+    """Get answer for a specific question in an attempt."""
+    return db.query(QuizAnswer).filter(
+        and_(
+            QuizAnswer.question_id == question_id,
+            QuizAnswer.attempt_id == attempt_id
+        )
+    ).first()
+
+
+# ============================================================================
+# QUIZ STATISTICS AND ANALYTICS
+# ============================================================================
+
+def get_quiz_stats(
+    db: Session,
+    quiz_id: int
+) -> Dict[str, Any]:
+    """Get comprehensive statistics for a quiz."""
+    quiz = get_quiz(db, quiz_id)
+    if not quiz:
+        return {}
+    
+    attempts = get_attempts_by_quiz(db, quiz_id)
+    
+    if not attempts:
+        return {
+            'quiz_id': quiz_id,
+            'total_attempts': 0,
+            'average_score': 0.0,
+            'pass_rate': 0.0,
+            'best_score': 0.0,
+            'total_questions': quiz.total_questions,
+            'is_active': quiz.is_active
+        }
+    
+    completed_attempts = [a for a in attempts if a.status == "completed"]
+    scores = [a.score_percentage for a in completed_attempts]
+    passed_attempts = [a for a in completed_attempts if a.passed]
+    
+    return {
+        'quiz_id': quiz_id,
+        'total_attempts': len(attempts),
+        'completed_attempts': len(completed_attempts),
+        'average_score': sum(scores) / len(scores) if scores else 0.0,
+        'pass_rate': (len(passed_attempts) / len(completed_attempts) * 100) if completed_attempts else 0.0,
+        'best_score': max(scores) if scores else 0.0,
+        'total_questions': quiz.total_questions,
+        'is_active': quiz.is_active
+    }
+
+
+def get_user_quiz_progress(
+    db: Session,
+    user_id: str,
+    goal_id: Optional[int] = None
+) -> Dict[str, Any]:
+    """Get quiz progress statistics for a user."""
+    query = db.query(QuizAttempt).filter(QuizAttempt.user_id == user_id)
+    
+    if goal_id:
+        query = query.join(Quiz).filter(Quiz.goal_id == goal_id)
+    
+    attempts = query.all()
+    completed_attempts = [a for a in attempts if a.status == "completed"]
+    
+    return {
+        'total_attempts': len(attempts),
+        'completed_attempts': len(completed_attempts),
+        'passed_attempts': len([a for a in completed_attempts if a.passed]),
+        'average_score': sum(a.score_percentage for a in completed_attempts) / len(completed_attempts) if completed_attempts else 0.0,
+        'best_score': max(a.score_percentage for a in completed_attempts) if completed_attempts else 0.0
+    }
 

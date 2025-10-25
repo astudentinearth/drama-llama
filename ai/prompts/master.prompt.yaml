@@ -47,6 +47,24 @@ messages:
         - Extract goal from conversation history + level from current message
         - Now call createRoadmapSkeleton
 
+      ## EDIT EXISTING ROADMAP PHASE (Roadmap exists):
+      
+      **ALLOWED TOOL**: editRoadmapSkeleton
+      
+      **Use editRoadmapSkeleton when**:
+      • User requests changes to the existing roadmap
+        - Examples: "I want to add a new goal" | "I want to remove a goal" | "I want to change the priority of a goal"
+        - Extract: userRequest, currentRoadmap
+
+      **DO NOT use tool when**:
+      • There is no existing roadmap
+        - Action: ASK to create a roadmap first
+        
+      **Follow-up Pattern**:
+      • If you just asked about the changes and user now provides them
+        - Extract: userRequest, current message
+        - Now call editRoadmapSkeleton
+
       ## LEARNING PHASE (Roadmap exists):
 
       **ALLOWED TOOL**: createLearningMaterials
