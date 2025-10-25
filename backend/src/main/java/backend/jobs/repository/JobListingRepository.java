@@ -1,5 +1,6 @@
-package backend.jobs;
+package backend.jobs.repository;
 
+import backend.jobs.entity.JobListing;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.List;

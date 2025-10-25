@@ -1,4 +1,4 @@
-package backend.jobs;
+package backend.jobs.entity;
 
 import backend.auth.User;
 import io.hypersistence.utils.hibernate.type.array.ListArrayType;

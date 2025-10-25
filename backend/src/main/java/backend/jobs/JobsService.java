@@ -5,6 +5,8 @@ import backend.auth.User;
 import backend.auth.exception.UnauthorizedException;
 import backend.exception.NotFoundException;
 import backend.jobs.dto.CreateJobListingDTO;
+import backend.jobs.entity.JobListing;
+import backend.jobs.repository.JobListingRepository;
 import lombok.AllArgsConstructor;
 import org.modelmapper.ModelMapper;
 import org.springframework.security.access.annotation.Secured;

@@ -1,6 +1,5 @@
 package backend.jobs.dto;
 
-
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -12,6 +11,7 @@ import java.util.List;
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
-public class JobListingsResponse {
-    private List<JobListingDTO> jobs;
+public class JobApplicationsResponse {
+    private List<JobApplicationDTO> applications;
 }
+
