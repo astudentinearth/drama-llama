@@ -12,7 +12,7 @@ logger = logging.getLogger(__name__)
 When user stated he/she want to apply for a job, how can I develop my self etc. this tool should be triggered.
 This tool briefly takes summary of user request, and the links mentioned.
 """
-async def createRoadmapSkeleton(db, user_request: str, job_listings: Optional[list[str]] = None, user_summarized_cv: Optional[str] = None, user_expertise_domains: Optional[list[str]] = None) -> str:
+async def createRoadmapSkeleton(user_request: str, job_listings: Optional[list[str]] = None, user_summarized_cv: Optional[str] = None, user_expertise_domains: Optional[list[str]] = None) -> str:
     jobListings = ["this is an example job listing, requiring skills in python, django, rest api, sql, git, docker"]
     
     # 0. load prompt with variables
@@ -54,7 +54,7 @@ async def createRoadmapSkeleton(db, user_request: str, job_listings: Optional[li
     # 6. return this array and project inside a friendly/professinal text
     return async_response.get("response", "")
 
-async def createLearningMaterials(db, things_to_learn: list[str], end_of_roadmap_project: str) -> str:
+async def createLearningMaterials(things_to_learn: list[str], end_of_roadmap_project: str) -> str:
     learningmaterialsrequest = {
         "thingsToLearn": things_to_learn if things_to_learn else [],
         "endOfRoadmapProject": end_of_roadmap_project if end_of_roadmap_project else ""
@@ -106,6 +106,8 @@ async def master(request: ChatRequest) -> Dict[str, Any]:
         
         # Make intelligent tool decision
         tool_decision = await decision_engine.make_tool_decision(context)
+        
+        logger.debug(f"Tool decision: {tool_decision}")
         
         logger.info(f"Tool decision: {tool_decision.decision.value} - {tool_decision.reasoning}")
         
