@@ -3,14 +3,17 @@ package backend.profile;
 import backend.auth.AuthContext;
 import backend.auth.exception.UnauthorizedException;
 import backend.profile.dto.UpdateProfileDTO;
-import backend.profile.dto.UserProfileDTO;
+import backend.profile.entity.UserCv;
 import backend.profile.entity.UserProfile;
 import backend.profile.exception.ProfileNotFoundException;
+import backend.profile.repository.UserCvRepository;
+import backend.profile.repository.UserProfileRepository;
 import lombok.AllArgsConstructor;
 import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
 import java.util.UUID;
 
 @Service
@@ -18,6 +21,7 @@ import java.util.UUID;
 public class UserProfileService {
 
     private UserProfileRepository userProfileRepository;
+    private UserCvRepository cvRepository;
     private AuthContext authContext;
 
     public UserProfile getUserProfileById(UUID userId) {
@@ -35,5 +39,11 @@ public class UserProfileService {
         mapper.map(dto, profile);
         profile.setUser(currentUser);
         return userProfileRepository.save(profile);
+    }
+
+    public List<UserCv> getUserCvs(UUID userId) {
+        var currentUser = authContext.getCurrentUser();
+        if(!currentUser.is(userId)) throw new UnauthorizedException();
+        return cvRepository.findByUserId(userId);
     }
 }
