@@ -26,6 +26,7 @@ from db_config import (
     count_session_messages,
     # Graduation project operations
     get_graduation_project_questions_by_session,
+    get_submissions_by_session
 )
 from models.schemas import (
     SessionCreate,
