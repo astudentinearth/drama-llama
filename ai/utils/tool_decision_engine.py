@@ -71,13 +71,6 @@ class ToolExecutionResult:
     execution_time: float = 0.0
     metadata: Dict[str, Any] = None
 
-class IntentionResult:
-    """Result of intention detection."""
-    intent: IntentType
-    confidence: float
-    extracted_params: Dict[str, Any]
-    requires_clarification: bool
-    clarification_questions: List[str]
 
 class ToolDecisionEngine:
     """
@@ -194,7 +187,7 @@ class ToolDecisionEngine:
     
     async def _llm_intent_detection(self, context: ToolDecisionContext) -> IntentDetectionResponse:
         """Use LLM for sophisticated intent detection."""
-        prompt = f"""
+        system_prompt = f"""
         Analyze the user's intent from their message and conversation history.
         
         User Message: "{context.user_message}"
@@ -219,7 +212,7 @@ class ToolDecisionEngine:
         try:
             response = await self.ollama_client.generate(
                 prompt="Analyze the user's intent from their message and conversation history. Only respond in JSON format.",
-                system_prompt=prompt,
+                system_prompt=system_prompt,
                 temperature=0.1,
                 format=IntentDetectionResponse.model_json_schema()
             )
