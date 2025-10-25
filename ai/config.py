@@ -16,6 +16,15 @@ class Settings(BaseSettings):
     ollama_timeout: int = int(os.getenv("OLLAMA_TIMEOUT", "300"))
     ollama_max_tokens: int = int(os.getenv("OLLAMA_MAX_TOKENS", "4096"))
     
+    # GROQ API
+    groq_api_key: str = os.getenv("GROQ_API_KEY", "")
+    # Note: Only certain models support json_schema structured outputs
+    # Supported models: llama-3.1-70b-versatile, llama-3.1-8b-instant, gemma2-9b-it
+    groq_model: str = os.getenv("GROQ_MODEL", "llama-3.1-70b-versatile")
+    groq_max_tokens: int = int(os.getenv("GROQ_MAX_TOKENS", "4096"))
+    groq_temperature: float = float(os.getenv("GROQ_TEMPERATURE", "0.1"))
+    groq_timeout: int = int(os.getenv("GROQ_TIMEOUT", "60"))
+
     # API Configuration
     api_host: str = os.getenv("API_HOST", "0.0.0.0")
     api_port: int = int(os.getenv("API_PORT", "8001"))
@@ -27,19 +36,8 @@ class Settings(BaseSettings):
     
     # Logging
     log_level: str = os.getenv("LOG_LEVEL", "INFO")
-    log_file: str = os.getenv("LOG_FILE", "ai_service.log")
     
-    # Cache Configuration
-    enable_cache: bool = os.getenv("ENABLE_CACHE", "True").lower() == "true"
-    cache_ttl: int = int(os.getenv("CACHE_TTL", "3600"))
-    redis_host: str = os.getenv("REDIS_HOST", "localhost")
-    redis_port: int = int(os.getenv("REDIS_PORT", "6379"))
-    redis_db: int = int(os.getenv("REDIS_DB", "0"))
-    
-    # Rate Limiting
-    rate_limit_per_user: int = int(os.getenv("RATE_LIMIT_PER_USER", "100"))
-    rate_limit_window: int = int(os.getenv("RATE_LIMIT_WINDOW", "3600"))
-    
+    # Database
     ai_database_url: str = os.getenv(
         "AI_DATABASE_URL",
         "postgresql://ai_user:ai_password@localhost:5432/dramallama_ai"

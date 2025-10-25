@@ -1,5 +1,5 @@
-model: "llama3.1:8b"
-modelProvider: "ollama"
+model: "llama-3.1-70b-versatile"
+modelProvider: "groq"
 modelProperties:
   temperature: 0.1
 
