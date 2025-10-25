@@ -257,6 +257,9 @@ class GraduationProjectQuestion(Base):
     answer_min_chars = Column(Integer, nullable=False, default=500)
     answer_max_chars = Column(Integer, nullable=False, default=2500)
     requires_material_citations = Column(Boolean, nullable=False, default=False)
+    
+    # Relationships
+    submissions = relationship("GraduationProjectSubmission", back_populates="question", cascade="all, delete-orphan")
 
 
 class GraduationProjectSubmission(Base):
