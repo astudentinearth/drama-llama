@@ -195,3 +195,79 @@ class LearningMaterialResponse(BaseModel):
     description: str = Field(..., description="Material description")
     content: str = Field(..., description="Main content in Markdown")
     estimated_time_minutes: int = Field(..., description="Estimated completion time")
+
+
+# ============= Graduation Project Questions =============
+
+class QuestionDifficulty(str, Enum):
+    """Question difficulty levels."""
+    INTRODUCTORY = "introductory"
+    INTERMEDIATE = "intermediate"
+    ADVANCED = "advanced"
+
+
+class GraduationProjectQuestionSchema(BaseModel):
+    """Schema for a single graduation project question."""
+    question_id: str = Field(..., description="Stable slug (kebab-case)")
+    prompt: str = Field(..., description="The open-ended question text")
+    rationale: str = Field(..., description="Why this question assesses the intended competency")
+    goals_covered: List[int] = Field(..., description="Array of goal IDs")
+    materials_covered: List[int] = Field(..., description="Array of material IDs")
+    expected_competencies: List[str] = Field(..., description="Array of competency strings")
+    difficulty: QuestionDifficulty = Field(..., description="Question difficulty level")
+    estimated_time_minutes: int = Field(..., ge=10, le=45, description="Estimated time to answer")
+    evaluation_rubric: List[str] = Field(..., description="3-5 evaluation criteria")
+    answer_min_chars: int = Field(default=500, description="Minimum answer length")
+    answer_max_chars: int = Field(default=2500, description="Maximum answer length")
+    requires_material_citations: bool = Field(default=False, description="Whether citations are required")
+
+
+class GraduationProjectContext(BaseModel):
+    """Graduation project context for question generation."""
+    title: str = Field(..., description="Graduation project title")
+    description: str = Field(..., description="Graduation project full description")
+
+
+class GenerateQuestionsResponse(BaseModel):
+    """Response from graduation project question generation."""
+    graduation_project: GraduationProjectContext
+    questions: List[GraduationProjectQuestionSchema] = Field(..., description="Exactly 5 questions")
+    graduation_project_db_id: Optional[int] = None
+    question_db_ids: List[Optional[int]] = Field(default_factory=list)
+
+
+class MaterialCitation(BaseModel):
+    """Citation from a learning material."""
+    material_id: int = Field(..., description="Referenced material ID")
+    excerpt: Optional[str] = Field(None, description="Quoted fragment from material description")
+
+
+class QuestionAnswer(BaseModel):
+    """User's answer to a graduation project question."""
+    question_id: str = Field(..., description="Question slug (kebab-case)")
+    text: str = Field(..., description="User's free-form answer")
+    citations: Optional[List[MaterialCitation]] = Field(default=None, description="Material citations (optional)")
+
+
+class SubmitAnswersRequest(BaseModel):
+    """Request to submit graduation project question answers."""
+    session_id: int
+    answers: List[QuestionAnswer] = Field(..., min_items=5, max_items=5, description="Exactly 5 answers")
+
+
+class SubmissionEvaluation(BaseModel):
+    """Evaluation result for a submission."""
+    submission_id: int = Field(..., description="Submission database ID")
+    question_id: str = Field(..., description="Question slug")
+    score: float = Field(..., ge=0.0, le=1.0, description="Evaluation score (0-1)")
+    feedback: str = Field(..., description="AI-generated feedback")
+    rubric_scores: Optional[Dict[str, float]] = Field(None, description="Per-criterion scores")
+    error: Optional[str] = Field(None, description="Error message if evaluation failed")
+
+
+class SubmitAnswersResponse(BaseModel):
+    """Response after submitting answers."""
+    session_id: int
+    submission_ids: List[int] = Field(..., description="Database IDs of created submissions")
+    message: str = Field(default="Answers submitted successfully")
+    evaluations: Optional[List[SubmissionEvaluation]] = None

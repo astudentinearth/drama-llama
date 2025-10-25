@@ -24,6 +24,9 @@ from db_config import (
     get_last_n_messages,
     clear_session_messages,
     count_session_messages,
+    # Graduation project operations
+    get_graduation_project_questions_by_session,
+    get_submissions_by_session
 )
 from models.schemas import (
     SessionCreate,
@@ -258,7 +261,7 @@ def get_full_session_data(
     db: Session = Depends(get_db)
 ):
     """
-    Get complete session data including roadmap, goals, and learning materials.
+    Get complete session data including roadmap, goals, learning materials, and graduation project questions.
     
     - **session_id**: Session ID
     
@@ -338,6 +341,49 @@ def get_full_session_data(
                 "materials": materials
             }
             session_data["goals"].append(goal_data)
+    
+    # Add graduation project questions and submissions if available
+    try:
+        questions = get_graduation_project_questions_by_session(db, session_id)
+        submissions = get_submissions_by_session(db, session_id)
+        
+        if questions or submissions:
+            session_data["graduation_project_questions"] = {
+                "questions": [
+                    {
+                        "question_id": q.question_id,
+                        "prompt": q.prompt,
+                        "rationale": q.rationale,
+                        "goals_covered": q.goals_covered,
+                        "materials_covered": q.materials_covered,
+                        "expected_competencies": q.expected_competencies,
+                        "difficulty": q.difficulty.value,
+                        "estimated_time_minutes": q.estimated_time_minutes,
+                        "evaluation_rubric": q.evaluation_rubric,
+                        "answer_min_chars": q.answer_min_chars,
+                        "answer_max_chars": q.answer_max_chars,
+                        "requires_material_citations": q.requires_material_citations
+                    }
+                    for q in questions
+                ],
+                "submissions": [
+                    {
+                        "id": s.id,
+                        "question_id": s.question.question_id,
+                        "answer_text": s.answer_text,
+                        "citations": s.citations,
+                        "evaluation_score": s.evaluation_score,
+                        "evaluation_feedback": s.evaluation_feedback,
+                        "rubric_scores": s.rubric_scores,
+                        "submitted_at": format_datetime(s.submitted_at),
+                        "evaluated_at": format_datetime(s.evaluated_at)
+                    }
+                    for s in submissions
+                ]
+            }
+    except Exception as e:
+        # If graduation project questions are not available, just skip
+        pass
     
     return APIResponse(success=True, data=session_data)
 

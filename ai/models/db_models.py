@@ -216,3 +216,84 @@ class UserSkill(Base):
     
     def __repr__(self):
         return f"<UserSkill(user_id={self.user_id}, skill={self.skill_name}, level={self.skill_level})>"
+
+
+class QuestionDifficultyEnum(str, enum.Enum):
+    """Question difficulty levels."""
+    INTRODUCTORY = "introductory"
+    INTERMEDIATE = "intermediate"
+    ADVANCED = "advanced"
+
+
+class GraduationProjectQuestion(Base):
+    """
+    Stores open-ended questions generated for graduation project assessment.
+    Each question tests competencies across the roadmap goals and materials.
+    """
+    __tablename__ = "graduation_project_questions"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    session_id = Column(Integer, ForeignKey("sessions.id", ondelete="CASCADE"), nullable=False, index=True)
+    
+    # Question identification
+    question_id = Column(String(255), nullable=False, unique=True)  # Stable slug (kebab-case)
+    
+    # Question content
+    prompt = Column(Text, nullable=False)  # The actual question text
+    rationale = Column(Text, nullable=False)  # Why this question assesses the competency
+    
+    # Coverage mapping
+    goals_covered = Column(JSON, nullable=False)  # Array of goal IDs
+    materials_covered = Column(JSON, nullable=False)  # Array of material IDs
+    expected_competencies = Column(JSON, nullable=False)  # Array of competency strings
+    
+    # Question metadata
+    difficulty = Column(SQLEnum(QuestionDifficultyEnum), nullable=False)
+    estimated_time_minutes = Column(Integer, nullable=False)
+    
+    # Evaluation criteria
+    evaluation_rubric = Column(JSON, nullable=False)  # Array of criterion strings
+    answer_min_chars = Column(Integer, nullable=False, default=500)
+    answer_max_chars = Column(Integer, nullable=False, default=2500)
+    requires_material_citations = Column(Boolean, nullable=False, default=False)
+    
+    # Metadata
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+    
+    # Relationships
+    submissions = relationship("GraduationProjectSubmission", back_populates="question", cascade="all, delete-orphan")
+    
+    def __repr__(self):
+        return f"<GraduationProjectQuestion(id={self.id}, question_id={self.question_id}, difficulty={self.difficulty})>"
+
+
+class GraduationProjectSubmission(Base):
+    """
+    Stores user submissions for graduation project questions.
+    Each submission contains the user's answer and optional citations from materials.
+    """
+    __tablename__ = "graduation_project_submissions"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    session_id = Column(Integer, ForeignKey("sessions.id", ondelete="CASCADE"), nullable=False, index=True)
+    question_id = Column(Integer, ForeignKey("graduation_project_questions.id", ondelete="CASCADE"), nullable=False, index=True)
+    
+    # Submission content
+    answer_text = Column(Text, nullable=False)
+    citations = Column(JSON)  # Array of {material_id, excerpt} objects
+    
+    # Evaluation results (populated by AI evaluation)
+    evaluation_score = Column(Float)  # 0-1 scale
+    evaluation_feedback = Column(Text)  # AI-generated feedback
+    rubric_scores = Column(JSON)  # Per-criterion scores
+    
+    # Metadata
+    submitted_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    evaluated_at = Column(DateTime, nullable=True)
+    
+    # Relationships
+    question = relationship("GraduationProjectQuestion", back_populates="submissions")
+    
+    def __repr__(self):
+        return f"<GraduationProjectSubmission(id={self.id}, question_id={self.question_id}, session_id={self.session_id})>"

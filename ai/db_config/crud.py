@@ -965,3 +965,136 @@ def search_learning_materials(
         )
     ).offset(skip).limit(limit).all()
 
+
+# ============================================================================
+# GRADUATION PROJECT QUESTIONS OPERATIONS
+# ============================================================================
+
+from models.db_models import GraduationProjectQuestion, GraduationProjectSubmission, QuestionDifficultyEnum
+
+
+def create_graduation_project_question(
+    db: Session,
+    session_id: int,
+    question_id: str,
+    prompt: str,
+    rationale: str,
+    goals_covered: List[int],
+    materials_covered: List[int],
+    expected_competencies: List[str],
+    difficulty: QuestionDifficultyEnum,
+    estimated_time_minutes: int,
+    evaluation_rubric: List[str],
+    answer_min_chars: int = 500,
+    answer_max_chars: int = 2500,
+    requires_material_citations: bool = False
+) -> GraduationProjectQuestion:
+    """Create a new graduation project question."""
+    question = GraduationProjectQuestion(
+        session_id=session_id,
+        question_id=question_id,
+        prompt=prompt,
+        rationale=rationale,
+        goals_covered=goals_covered,
+        materials_covered=materials_covered,
+        expected_competencies=expected_competencies,
+        difficulty=difficulty,
+        estimated_time_minutes=estimated_time_minutes,
+        evaluation_rubric=evaluation_rubric,
+        answer_min_chars=answer_min_chars,
+        answer_max_chars=answer_max_chars,
+        requires_material_citations=requires_material_citations
+    )
+    db.add(question)
+    db.commit()
+    db.refresh(question)
+    return question
+
+
+def get_graduation_project_questions_by_session(
+    db: Session,
+    session_id: int
+) -> List[GraduationProjectQuestion]:
+    """Get all graduation project questions for a session."""
+    return db.query(GraduationProjectQuestion).filter(
+        GraduationProjectQuestion.session_id == session_id
+    ).all()
+
+
+def get_graduation_project_question_by_slug(
+    db: Session,
+    question_id: str
+) -> Optional[GraduationProjectQuestion]:
+    """Get a graduation project question by its slug."""
+    return db.query(GraduationProjectQuestion).filter(
+        GraduationProjectQuestion.question_id == question_id
+    ).first()
+
+
+def create_graduation_project_submission(
+    db: Session,
+    session_id: int,
+    question_id: int,
+    answer_text: str,
+    citations: Optional[List[Dict[str, Any]]] = None
+) -> GraduationProjectSubmission:
+    """Create a new graduation project submission."""
+    submission = GraduationProjectSubmission(
+        session_id=session_id,
+        question_id=question_id,
+        answer_text=answer_text,
+        citations=citations or []
+    )
+    db.add(submission)
+    db.commit()
+    db.refresh(submission)
+    return submission
+
+
+def get_submissions_by_session(
+    db: Session,
+    session_id: int
+) -> List[GraduationProjectSubmission]:
+    """Get all submissions for a session."""
+    return db.query(GraduationProjectSubmission).filter(
+        GraduationProjectSubmission.session_id == session_id
+    ).all()
+
+
+def update_submission_evaluation(
+    db: Session,
+    submission_id: int,
+    evaluation_score: float,
+    evaluation_feedback: str,
+    rubric_scores: Optional[Dict[str, float]] = None
+) -> Optional[GraduationProjectSubmission]:
+    """Update a submission with evaluation results."""
+    submission = db.query(GraduationProjectSubmission).filter(
+        GraduationProjectSubmission.id == submission_id
+    ).first()
+    
+    if not submission:
+        return None
+    
+    submission.evaluation_score = evaluation_score
+    submission.evaluation_feedback = evaluation_feedback
+    submission.rubric_scores = rubric_scores
+    submission.evaluated_at = datetime.utcnow()
+    
+    db.commit()
+    db.refresh(submission)
+    return submission
+
+
+def delete_graduation_project_questions_by_session(
+    db: Session,
+    session_id: int
+) -> int:
+    """Delete all graduation project questions for a session."""
+    count = db.query(GraduationProjectQuestion).filter(
+        GraduationProjectQuestion.session_id == session_id
+    ).delete()
+    db.commit()
+    return count
+
+
