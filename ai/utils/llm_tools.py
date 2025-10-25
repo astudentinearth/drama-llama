@@ -67,7 +67,7 @@ async def createLearningMaterials(things_to_learn: list[str], end_of_roadmap_pro
         prompt=prompt.get_user_prompt(),
         system_prompt=prompt.get_system_prompt(),
         temperature=0.2,
-        format=LearningMaterialResponse.model_dump_json()
+        format=LearningMaterialResponse.model_json_schema()
     )
 
     # crawl web
@@ -106,7 +106,8 @@ async def master(request: ChatRequest) -> Dict[str, Any]:
         
         # Make intelligent tool decision
         tool_decision = await decision_engine.make_tool_decision(context)
-        print(tool_decision)
+        
+        logger.debug(f"Tool decision: {tool_decision}")
         
         logger.info(f"Tool decision: {tool_decision.decision.value} - {tool_decision.reasoning}")
         
