@@ -25,6 +25,7 @@ from db_config.crud import (
     get_roadmap_by_session,
     get_goals_by_roadmap,
     get_goal,
+    get_materials_by_roadmap,
     create_roadmap,
     create_goal,
     create_learning_material
@@ -91,12 +92,17 @@ class AIService:
         # Check if roadmap exists for context
         roadmap = get_roadmap_by_session(db, session_id)
         has_roadmap = roadmap is not None
+
+        learning_materials = get_materials_by_roadmap(db, roadmap.id) if has_roadmap else []
+        has_learning_materials = len(learning_materials) > 0
         
         # Conditionally provide tools based on roadmap existence
         # This prevents the AI from trying to use unavailable functionality
-        if has_roadmap:
+        if has_learning_materials:
             # Roadmap exists: User can create learning materials OR create a new roadmap
-            available_tools = ["createLearningMaterials", "editRoadmapSkeleton"]
+            available_tools = []
+        elif has_roadmap:
+            available_tools = ["createLearningMaterials"]
         else:
             # No roadmap: User can ONLY create a roadmap first
             available_tools = ["createRoadmapSkeleton"]
