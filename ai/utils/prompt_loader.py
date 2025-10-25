@@ -3,7 +3,7 @@
 import os
 import yaml
 from typing import Dict, Any, Optional
-from ai.utils import YamlParser
+from utils import YamlParser
 
 class PromptLoader:
     """
