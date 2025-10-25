@@ -568,7 +568,7 @@ async def evaluate_submission(submission_id: int, db: Session) -> Dict[str, Any]
         raise
 
 
-@router.post("/{session_id}/graduation-project/submit")
+@router.post("/{session_id}/submit")
 async def submit_graduation_answers(
     session_id: int,
     request: SubmitAnswersRequest,
