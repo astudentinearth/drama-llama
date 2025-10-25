@@ -12,64 +12,39 @@ from .db_models import (
 )
 from .schemas import (
     # Enums
-    IntentType,
     SkillLevel,
-    
-    # Router & Intent Detection
-    IntentDetectionRequest,
-    IntentDetectionResponse,
+    SessionStatus,
+    MessageRole,
     
     # Common Models
     Skill,
     Goal,
     
-    # Roadmap Generation
-    RoadmapInputRequest,
-    ExtractedProfile,
-    RoadmapResponse,
-    
-    # Course Generation
-    CourseGenerationRequest,
-    Exercise,
-    CourseSection,
-    CourseContent,
-    GraduationProjectRequest,
-    GraduationProject,
-    
-    # Assessment & Testing
-    QuizGenerationRequest,
-    QuizOption,
-    QuizQuestion,
-    Quiz,
-    EvaluationCriterion,
-    ProjectEvaluationRequest,
-    Feedback,
-    ProjectEvaluation,
-    
-    # Resume Analysis
-    ResumeAnalysisRequest,
-    ResumeAnalysisResponse,
-    
-    # Job Posting Generation
-    JobPostingRequest,
-    JobPosting,
-    JobPostingOptimizationRequest,
-    OptimizationSuggestion,
-    JobPostingOptimization,
-    CandidateAnalysisRequest,
-    CandidatePoolAnalysis,
-    ApplicationRankingRequest,
-    CandidateScore,
-    ApplicationRanking,
-    ResumeEnhancementRequest,
+    # Chat Models
     ChatRequest,
     ChatResponse,
-    ResumeSuggestion,
-    ResumeEnhancement,
     
     # API Response Wrapper
     APIResponse,
     HealthCheckResponse,
+    
+    # Session Management
+    SessionCreate,
+    SessionUpdate,
+    SessionResponse,
+    SessionListResponse,
+    SessionProgressStats,
+    MessageCreate,
+    MessageResponse,
+    MessagesListResponse,
+    
+    # AI Tool Response Models
+    ToolCallInstruction,
+    AIToolResponse,
+    RoadmapGoalSchema,
+    RoadmapSkeletonResponse,
+    LearningExample,
+    LearningMaterialResponse,
 )
 
 __all__ = [
@@ -80,69 +55,43 @@ __all__ = [
     "Base",
     "SkillLevelEnum",
     "RoadmapStatusEnum",
-    "User",
     "Roadmap",
     "RoadmapGoal",
     "LearningMaterial",
     "UserSkill",
     
     # Enums
-    "IntentType",
     "SkillLevel",
-    
-    # Router & Intent Detection
-    "IntentDetectionRequest",
-    "IntentDetectionResponse",
+    "SessionStatus",
+    "MessageRole",
     
     # Common Models
     "Skill",
     "Goal",
     
-    # Roadmap Generation
-    "RoadmapInputRequest",
-    "ExtractedProfile",
-    "RoadmapResponse",
-    
-    # Course Generation
-    "CourseGenerationRequest",
-    "Exercise",
-    "CourseSection",
-    "CourseContent",
-    "GraduationProjectRequest",
-    "GraduationProject",
-    
-    # Assessment & Testing
-    "QuizGenerationRequest",
-    "QuizOption",
-    "QuizQuestion",
-    "Quiz",
-    "EvaluationCriterion",
-    "ProjectEvaluationRequest",
-    "Feedback",
-    "ProjectEvaluation",
-    
-    # Resume Analysis
-    "ResumeAnalysisRequest",
-    "ResumeAnalysisResponse",
-    
-    # Job Posting Generation
-    "JobPostingRequest",
-    "JobPosting",
-    "JobPostingOptimizationRequest",
-    "OptimizationSuggestion",
-    "JobPostingOptimization",
-    "CandidateAnalysisRequest",
-    "CandidatePoolAnalysis",
-    "ApplicationRankingRequest",
-    "CandidateScore",
-    "ApplicationRanking",
-    "ResumeEnhancementRequest",
+    # Chat Models
     "ChatRequest",
     "ChatResponse",
-    "ResumeSuggestion",
-    "ResumeEnhancement",
     
     # API Response Wrapper
     "APIResponse",
     "HealthCheckResponse",
+    
+    # Session Management
+    "SessionCreate",
+    "SessionUpdate",
+    "SessionResponse",
+    "SessionListResponse",
+    "SessionProgressStats",
+    "MessageCreate",
+    "MessageResponse",
+    "MessagesListResponse",
+    
+    # AI Tool Response Models
+    "ToolCallInstruction",
+    "AIToolResponse",
+    "RoadmapGoalSchema",
+    "RoadmapSkeletonResponse",
+    "LearningExample",
+    "LearningMaterialResponse",
 ]

@@ -1,11 +1,8 @@
-from typing import Union
-from fastapi import FastAPI, Depends
+from fastapi import FastAPI
 from sqlalchemy import text
-from sqlalchemy.orm import Session
-from models.schemas import ChatRequest
-from utils.llm_tools import master
-from db_config.database import init_db, get_db_context, drop_db, get_db
+from db_config.database import init_db, get_db_context, drop_db
 from routes import sessions_router
+from routes.ai_actions import router as ai_router
 
 app = FastAPI(
     title="Drama Llama AI Learning Career Platform",
@@ -15,14 +12,7 @@ app = FastAPI(
 
 # Include routers
 app.include_router(sessions_router)
-
-@app.post("/chat")
-async def chat(request: ChatRequest, db: Session = Depends(get_db)):
-    """
-    Chat endpoint for conversational interactions.
-    """
-    # call master function
-    return await master(request, db)
+app.include_router(ai_router)
 
 @app.get("/health")
 def health_check():

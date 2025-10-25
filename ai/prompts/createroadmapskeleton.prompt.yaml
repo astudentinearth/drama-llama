@@ -1,7 +1,52 @@
-model: "llama3.1:8b"
-modelProvider: "ollama"
+model: "llama-3.1-70b-versatile"
+modelProvider: "groq"
 modelProperties:
   temperature: 0.1
+
+response_format:
+  type: "json_schema"
+  json_schema:
+    name: "roadmap_skeleton"
+    strict: true
+    schema:
+      type: "object"
+      properties:
+        goals:
+          type: "array"
+          description: "Array of learning goals ordered by priority and dependencies"
+          items:
+            type: "object"
+            properties:
+              goal_number:
+                type: "integer"
+                description: "Sequential goal number (1, 2, 3, ...)"
+              title:
+                type: "string"
+                description: "Clear, specific title for the learning goal"
+              description:
+                type: "string"
+                description: "Detailed description of what will be learned"
+              priority:
+                type: "integer"
+                description: "Priority level (1-5, where 1 is highest priority)"
+              estimated_hours:
+                type: "integer"
+                description: "Estimated hours to complete this goal"
+              prerequisites:
+                type: "array"
+                description: "List of prerequisite goal titles"
+                items:
+                  type: "string"
+            required: ["goal_number", "title", "description", "priority", "estimated_hours", "prerequisites"]
+            additionalProperties: false
+        graduation_project:
+          type: "string"
+          description: "Detailed description of a capstone project"
+        graduation_project_title:
+          type: "string"
+          description: "Title of the graduation project"
+      required: ["goals", "graduation_project", "graduation_project_title"]
+      additionalProperties: false
 
 messages:
   - role: "system"

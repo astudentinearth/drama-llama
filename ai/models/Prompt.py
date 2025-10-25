@@ -66,3 +66,32 @@ class Prompt:
     def get_messages(self):
         """Returns just the messages array"""
         return self.prompt_data.get('messages', [])
+    
+    def get_response_format(self):
+        """Returns response format specification for structured outputs"""
+        return self.prompt_data.get('response_format', None)
+    
+    def get_temperature(self):
+        """Returns temperature setting"""
+        model_props = self.prompt_data.get('modelProperties', {})
+        return model_props.get('temperature', 0.7)
+    
+    @staticmethod
+    def format_session_history(messages: list) -> list:
+        """
+        Format database messages for AI consumption.
+        Converts session message history into OpenAI message format.
+        
+        Args:
+            messages: List of message dicts from database with 'role', 'content', 'timestamp', 'metadata'
+        
+        Returns:
+            List of dicts with 'role' and 'content' keys
+        """
+        formatted = []
+        for msg in messages:
+            formatted.append({
+                'role': msg.get('role', 'user'),
+                'content': msg.get('content', '')
+            })
+        return formatted
