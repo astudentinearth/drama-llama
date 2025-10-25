@@ -316,8 +316,8 @@ class ResumeEnhancementRequest(BaseModel):
 
 class ChatRequest(BaseModel):
     """Chat request."""
+    session_id: int
     userPrompt: str
-    previousMessages: List[Dict[str, str]] = []
 
 class ChatResponse(BaseModel):
     """Chat response."""
@@ -362,3 +362,90 @@ class HealthCheckResponse(BaseModel):
     status: str
     ollama_connected: bool
     model: str
+
+
+# ============= Session Management =============
+
+class SessionStatus(str, Enum):
+    """Session status types."""
+    ACTIVE = "active"
+    COMPLETED = "completed"
+    ARCHIVED = "archived"
+
+
+class SessionCreate(BaseModel):
+    """Request from main backend to create a new session."""
+    user_id: str
+    session_name: Optional[str] = None
+    description: Optional[str] = None
+    status: SessionStatus = SessionStatus.ACTIVE
+
+
+class SessionUpdate(BaseModel):
+    """Request to update a session."""
+    session_name: Optional[str] = None
+    description: Optional[str] = None
+    status: Optional[SessionStatus] = None
+
+
+class SessionResponse(BaseModel):
+    """Session response."""
+    id: int
+    user_id: str
+    session_name: Optional[str]
+    description: Optional[str]
+    status: str
+    created_at: str
+    updated_at: str
+    completed_at: Optional[str]
+    
+    class Config:
+        from_attributes = True
+
+
+class SessionListResponse(BaseModel):
+    """List of sessions with metadata."""
+    sessions: List[SessionResponse]
+    total: int
+    skip: int
+    limit: int
+
+
+class SessionProgressStats(BaseModel):
+    """Session progress statistics."""
+    total_goals: int
+    completed_goals: int
+    total_materials: int
+    completed_materials: int
+    total_hours_estimated: int
+    total_hours_spent: int
+    completion_percentage: float
+
+
+class MessageRole(str, Enum):
+    """Message role types."""
+    USER = "user"
+    ASSISTANT = "assistant"
+    SYSTEM = "system"
+
+
+class MessageCreate(BaseModel):
+    """Request to add a message to a session."""
+    role: MessageRole
+    content: str
+    metadata: Optional[Dict[str, Any]] = None
+
+
+class MessageResponse(BaseModel):
+    """Message response."""
+    role: str
+    content: str
+    timestamp: str
+    metadata: Dict[str, Any] = {}
+
+
+class MessagesListResponse(BaseModel):
+    """List of messages response."""
+    session_id: int
+    messages: List[MessageResponse]
+    total: int
