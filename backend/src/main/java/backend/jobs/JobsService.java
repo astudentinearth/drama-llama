@@ -3,6 +3,8 @@ package backend.jobs;
 import backend.auth.AuthContext;
 import backend.auth.User;
 import backend.auth.exception.UnauthorizedException;
+import backend.company.Company;
+import backend.company.CompanyRepository;
 import backend.exception.NotFoundException;
 import backend.jobs.dto.CreateJobListingDTO;
 import backend.jobs.entity.JobListing;
@@ -23,6 +25,7 @@ public class JobsService {
     private final JobListingRepository jobListingRepository;
     private final ModelMapper modelMapper;
     private final AuthContext authContext;
+    private final CompanyRepository companyRepository;
 
     public List<JobListing> getJobListings() {
         return jobListingRepository.findAllByIsActive(true);
@@ -38,9 +41,11 @@ public class JobsService {
     @Transactional
     public JobListing createJobListing(CreateJobListingDTO dto) {
         User user = authContext.getCurrentUser();
+        Company userCompany = companyRepository.findByUserId(user.getId()).orElseThrow();
         JobListing listing = new JobListing();
         modelMapper.map(dto, listing);
         listing.setUser(user);
+        listing.setCompany(userCompany);
         return jobListingRepository.save(listing);
     }
 

@@ -20,4 +20,6 @@ public class JobListingDTO {
     private List<String> tags;
     private UUID userId;
     private boolean active;
+    private String companyId;
+    private String companyName;
 }

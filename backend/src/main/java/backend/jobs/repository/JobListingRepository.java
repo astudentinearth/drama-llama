@@ -8,4 +8,5 @@ import java.util.UUID;
 
 public interface JobListingRepository extends JpaRepository<JobListing, UUID> {
     List<JobListing> findAllByIsActive(boolean isActive);
+    List<JobListing> findAllByCompanyId(UUID companyId);
 }

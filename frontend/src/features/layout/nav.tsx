@@ -6,10 +6,12 @@ import Logo from "@/components/logo";
 import { useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+import { useMyCompanyQuery } from "../company/company.query";
 
 export default function Nav() {
   const user = useAuth().data;
   const logoutMutation = useLogoutMutation();
+  const myCompany = useMyCompanyQuery();
   
   return (
     <nav className="bg-card border-b items-center w-full h-fit px-8 py-3 shrink-0 flex gap-2">
@@ -18,6 +20,9 @@ export default function Nav() {
       <NavLink to="/roadmaps">Roadmaps</NavLink>
       <NavLink to="/jobs">Jobs</NavLink>
       <NavLink to="/profile">Profile</NavLink>
+      {user?.roles.includes("RECRUITER") &&
+        <NavLink to={"/company/" + myCompany.data?.id}>My company</NavLink>
+      }
       <div className="flex-1"></div>
       {user && (
         <Button

@@ -61,7 +61,8 @@ export default function NewListingDialog() {
         <DialogHeader>
           <DialogTitle>Create New Job Listing</DialogTitle>
           <DialogDescription>
-            Fill out the details for your new job listing. Click save when you're done.
+            Fill out the details for your new job listing. Click save when
+            you're done.
           </DialogDescription>
         </DialogHeader>
         <div className="grid gap-4 py-4">

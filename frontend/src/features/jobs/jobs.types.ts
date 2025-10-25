@@ -5,6 +5,8 @@ export interface JobListing {
   tags: string[];
   userId: string;
   active: boolean;
+  companyId: string;
+  companyName: string;
 }
 
 export interface CreateJobListing {

@@ -1,6 +1,7 @@
 package backend.jobs.entity;
 
 import backend.auth.User;
+import backend.company.Company;
 import io.hypersistence.utils.hibernate.type.array.ListArrayType;
 import jakarta.persistence.*;
 import lombok.*;
@@ -34,6 +35,10 @@ public class JobListing {
     @Type(ListArrayType.class)
     @Column(columnDefinition = "text[]", name = "tags")
     private List<String> tags;
+
+    @JoinColumn(name = "company_id", referencedColumnName = "id")
+    @ManyToOne
+    private Company company;
 
     @Column(columnDefinition = "boolean default true", name = "is_active")
     private boolean isActive;

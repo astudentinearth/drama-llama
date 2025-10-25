@@ -1,6 +1,7 @@
 package backend.auth;
 
 import backend.auth.user.UserRole;
+import backend.company.Company;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;

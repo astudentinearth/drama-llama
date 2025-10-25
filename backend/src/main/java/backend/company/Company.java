@@ -29,7 +29,7 @@ public class Company {
     private String description;
 
     /** The user who owns or manages the company profile */
-    @ManyToOne
+    @OneToOne
     @JoinColumn(name = "user_id", referencedColumnName = "id", nullable = false)
     private User user;
 

@@ -4,6 +4,8 @@ import backend.auth.dto.RegisterRequestDTO;
 import backend.auth.exception.EmailInUseException;
 import backend.auth.exception.UsernameInUseException;
 import backend.auth.user.UserRole;
+import backend.company.Company;
+import backend.company.CompanyRepository;
 import lombok.AllArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -18,6 +20,7 @@ public class AuthService {
     private UserRepository userRepository;
     private PasswordEncoder passwordEncoder;
     private AuthContext authContext;
+    private CompanyRepository companyRepository;
 
     @Transactional
     public User register(RegisterRequestDTO dto) {
@@ -33,7 +36,17 @@ public class AuthService {
         if(dto.isRecruiter()) user.setRoles(Set.of(UserRole.RECRUITER));
         else user.setRoles(Set.of(UserRole.MEMBER));
 
-        return userRepository.save(user);
+        User saved = userRepository.save(user);
+
+        if (dto.isRecruiter()) {
+            Company company = Company.builder()
+                    .name(dto.getUsername() + "'s company")
+                    .user(saved)
+                    .build();
+            companyRepository.save(company);
+        }
+
+        return saved;
 
     }
 
