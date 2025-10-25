@@ -224,7 +224,7 @@ class ToolDecisionEngine:
                 format=IntentDetectionResponse.model_json_schema()
             )
 
-            print(response)
+            logger.debug(f"LLM response: {response}")
             
             response_json = json.loads(response.get("response", ""))
             return IntentDetectionResponse(**response_json)
