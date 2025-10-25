@@ -109,13 +109,14 @@ class ToolDecisionEngine:
                 "confidence_threshold": 0.7
             },
             "createLearningMaterials": {
-                "description": "Creates learning materials for specific topics",
+                "description": "Creates learning materials for all goals in the roadmap (must be called after createRoadmapSkeleton)",
                 "prerequisites": ["createRoadmapSkeleton"],
                 "triggers": [
                     "learning materials", "resources", "tutorials", "exercises",
-                    "practice materials", "study resources", "course content"
+                    "practice materials", "study resources", "course content",
+                    "generate materials", "create materials", "materials for roadmap"
                 ],
-                "required_params": ["things_to_learn", "end_of_roadmap_project"],
+                "required_params": [],  # Gets everything from session's roadmap
                 "optional_params": [],
                 "confidence_threshold": 0.8
             }
@@ -130,10 +131,15 @@ class ToolDecisionEngine:
                 r"(?i)(skill|skills).*(development|learning|improvement)",
                 r"(?i)(career|professional).*(development|growth|path)"
             ],
-            IntentType.GENERATE_COURSE: [
-                r"(?i)(create|build|generate).*(course|materials|resources)",
+            IntentType.GENERATE_LEARNING_MATERIALS: [
+                r"(?i)(create|build|generate|make|provide).*(learning materials|study materials|resources)",
                 r"(?i)(learning|study).*(materials|resources|content)",
-                r"(?i)(tutorials|exercises|practice).*(for|about)",
+                r"(?i)(can you).*(create|generate|make|provide).*(materials)",
+                r"(?i)(materials|resources).*(for|about|on)",
+                r"(?i)(tutorials|exercises|lessons).*(for)"
+            ],
+            IntentType.GENERATE_COURSE: [
+                r"(?i)(create|build|generate).*(course|curriculum)",
                 r"(?i)(teach me|show me).*(how to|about)"
             ]
         }
@@ -181,10 +187,12 @@ class ToolDecisionEngine:
                     # Calculate confidence based on pattern match strength
                     confidence = min(0.9, 0.5 + (len(re.findall(pattern, message)) * 0.1))
                     max_score = max(max_score, confidence)
+                    logger.debug(f"Pattern match: '{pattern}' matched for intent {intent_type} with score {confidence}")
             
             if max_score > 0:
                 scores[intent_type] = max_score
         
+        logger.info(f"Pattern matching scores: {scores}")
         return scores
     
     async def _llm_intent_detection(self, context: ToolDecisionContext) -> IntentDetectionResponse:
@@ -197,15 +205,19 @@ class ToolDecisionEngine:
         Conversation History: {json.dumps(context.conversation_history[-3:], indent=2)}
         
         Available Intents:
-        - CHAT: General conversation, questions, advice
-        - GENERATE_ROADMAP: User wants a learning roadmap or career path
-        - GENERATE_COURSE: User wants learning materials or course content
+        - CHAT: General conversation, questions, advice, greetings
+        - GENERATE_ROADMAP: User wants to CREATE a new learning roadmap, career path, or study plan. Keywords: "create roadmap", "learning path", "study plan", "career path"
+        - GENERATE_LEARNING_MATERIALS: User wants to GENERATE learning materials/resources for an EXISTING roadmap. Keywords: "learning materials", "study materials", "resources", "tutorials", "exercises"
+        - GENERATE_COURSE: User wants detailed course content or curriculum
         
         Available Extracted Parameters:
-        - job_listings (list of links to job listings)
+        - user_request: The main request or goal
+        - job_listings: List of job listing URLs
+        - user_summarized_cv: CV or resume summary
+        - user_expertise_domains: List of expertise areas
 
         Determine:
-        1. The most likely intent
+        1. The most likely intent (be specific: roadmap creation vs materials generation)
         2. Confidence score (0.0-1.0)
         3. Any extracted parameters
         4. Whether clarification is needed
@@ -236,22 +248,28 @@ class ToolDecisionEngine:
                                llm_response: IntentDetectionResponse) -> IntentDetectionResponse:
         """Combine pattern matching and LLM results."""
         if not pattern_scores:
+            logger.info(f"No pattern matches, using LLM result: {llm_response.intent} ({llm_response.confidence:.2f})")
             return llm_response
         
         # Find best pattern match
         best_pattern_intent = max(pattern_scores.items(), key=lambda x: x[1])
         pattern_intent, pattern_confidence = best_pattern_intent
         
+        logger.info(f"Combining results - LLM: {llm_response.intent} ({llm_response.confidence:.2f}), Pattern: {pattern_intent} ({pattern_confidence:.2f})")
+        
         # Weighted combination: 60% LLM, 40% pattern matching
         if llm_response.intent == pattern_intent:
             combined_confidence = (llm_response.confidence * 0.6) + (pattern_confidence * 0.4)
+            logger.info(f"Intents match! Combined confidence: {combined_confidence:.2f}")
         else:
             # If they disagree, use the higher confidence one
             if llm_response.confidence > pattern_confidence:
                 combined_confidence = llm_response.confidence * 0.8
+                logger.info(f"LLM confidence higher, using LLM intent with adjusted confidence: {combined_confidence:.2f}")
             else:
                 combined_confidence = pattern_confidence * 0.8
                 llm_response.intent = pattern_intent
+                logger.info(f"Pattern confidence higher, using pattern intent {pattern_intent} with adjusted confidence: {combined_confidence:.2f}")
         
         llm_response.confidence = min(1.0, combined_confidence)
         return llm_response
@@ -269,12 +287,15 @@ class ToolDecisionEngine:
         try:
             # Step 1: Analyze intent
             intent_response = await self.analyze_intent(context)
+            logger.info(f"Intent detected: {intent_response.intent} with confidence {intent_response.confidence}")
             
             # Step 2: Determine if tools should be called
             decision = self._determine_tool_decision(intent_response, context)
+            logger.info(f"Tool decision: {decision.value}")
             
             # Step 3: Select appropriate tools
             recommended_tools = self._select_tools(decision, intent_response, context)
+            logger.info(f"Recommended tools: {recommended_tools}")
             
             # Step 4: Extract parameters
             extracted_params = self._extract_parameters(intent_response, context)
@@ -322,21 +343,26 @@ class ToolDecisionEngine:
         
         # Check if request is career/skill related
         if not self._is_career_related(context.user_message):
+            logger.info("Request declined: Not career/skill related")
             return ToolCallDecision.DECLINE_REQUEST
         
         # Check confidence threshold
         if intent_response.confidence < 0.5:
+            logger.info(f"Clarification needed: Low confidence ({intent_response.confidence:.2f})")
             return ToolCallDecision.CLARIFY_INTENT
         
         # Check for tool-specific intents
-        if intent_response.intent in [IntentType.GENERATE_ROADMAP, IntentType.GENERATE_COURSE]:
+        if intent_response.intent in [IntentType.GENERATE_ROADMAP, IntentType.GENERATE_COURSE, IntentType.GENERATE_LEARNING_MATERIALS]:
+            logger.info(f"Tool call triggered by intent: {intent_response.intent}")
             return ToolCallDecision.CALL_TOOL
         
         # Check for explicit tool triggers
         if self._has_tool_triggers(context.user_message):
+            logger.info("Tool call triggered by keyword match")
             return ToolCallDecision.CALL_TOOL
         
         # Default to no tool for general conversation
+        logger.info(f"No tool needed for intent: {intent_response.intent}")
         return ToolCallDecision.NO_TOOL
     
     def _is_career_related(self, message: str) -> bool:
@@ -368,9 +394,32 @@ class ToolDecisionEngine:
         
         selected_tools = []
         
-        # Check tool prerequisites
+        # Direct intent-to-tool mapping
+        intent_tool_map = {
+            IntentType.GENERATE_ROADMAP: "createRoadmapSkeleton",
+            IntentType.GENERATE_LEARNING_MATERIALS: "createLearningMaterials",
+        }
+        
+        # If intent directly maps to a tool and prerequisites are met
+        if intent_response.intent in intent_tool_map:
+            tool_name = intent_tool_map[intent_response.intent]
+            tool_def = self.tool_definitions.get(tool_name)
+            if tool_def:
+                # Check prerequisites
+                prereqs_met = all(
+                    self._prerequisite_met(prereq, context) 
+                    for prereq in tool_def["prerequisites"]
+                )
+                if prereqs_met:
+                    selected_tools.append(tool_name)
+                    logger.info(f"Selected tool {tool_name} based on intent {intent_response.intent}")
+                    return selected_tools
+                else:
+                    logger.warning(f"Tool {tool_name} not selected - prerequisites not met")
+        
+        # Fallback: Check all tools for triggers
         for tool_name, tool_def in self.tool_definitions.items():
-            if self._should_call_tool(tool_name, intent_response, context):
+            if tool_name not in selected_tools and self._should_call_tool(tool_name, intent_response, context):
                 selected_tools.append(tool_name)
         
         return selected_tools
@@ -402,7 +451,15 @@ class ToolDecisionEngine:
     def _prerequisite_met(self, prerequisite: str, context: ToolDecisionContext) -> bool:
         """Check if a tool prerequisite is met."""
         if prerequisite == "createRoadmapSkeleton":
-            # Check if roadmap was created in recent conversation
+            # First check if roadmap exists in database for this session
+            if context.db and context.session_id:
+                from db_config.crud import get_roadmap_by_session
+                roadmap = get_roadmap_by_session(context.db, context.session_id)
+                if roadmap:
+                    logger.info(f"Prerequisite met: Found roadmap (ID: {roadmap.id}) for session {context.session_id}")
+                    return True
+            
+            # Fallback: Check if roadmap was mentioned in recent conversation
             for msg in context.conversation_history[-5:]:
                 if "roadmap" in msg.get("content", "").lower():
                     return True
@@ -587,8 +644,8 @@ class ToolDecisionEngine:
             )
         elif tool_name == "createLearningMaterials":
             return await tool_function(
-                things_to_learn=params.get("things_to_learn", []),
-                end_of_roadmap_project=params.get("end_of_roadmap_project", "")
+                db=context.db,
+                session_id=context.session_id
             )
     
     def get_decision_stats(self) -> Dict[str, Any]:

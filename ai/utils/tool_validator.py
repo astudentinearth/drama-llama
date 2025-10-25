@@ -72,17 +72,11 @@ class ToolValidator:
                 "max_retries": 3
             },
             "createLearningMaterials": {
-                "required_params": ["things_to_learn", "end_of_roadmap_project"],
-                "param_types": {
-                    "things_to_learn": list,
-                    "end_of_roadmap_project": str
-                },
-                "param_validation": {
-                    "things_to_learn": lambda x: isinstance(x, list) and len(x) > 0 and all(isinstance(item, str) for item in x),
-                    "end_of_roadmap_project": lambda x: len(x.strip()) > 10
-                },
+                "required_params": [],  # Gets everything from session's roadmap
+                "param_types": {},
+                "param_validation": {},
                 "prerequisites": ["createRoadmapSkeleton"],
-                "timeout_seconds": 45,
+                "timeout_seconds": 60,  # Increased timeout as it generates multiple materials
                 "max_retries": 2
             }
         }

@@ -9,6 +9,7 @@ class IntentType(str, Enum):
     """Types of user intents."""
     CHAT = "chat"
     GENERATE_ROADMAP = "generate_roadmap"
+    GENERATE_LEARNING_MATERIALS = "generate_learning_materials"
     GENERATE_COURSE = "generate_course"
     GENERATE_PROJECT = "generate_project"
     GENERATE_QUIZ = "generate_quiz"

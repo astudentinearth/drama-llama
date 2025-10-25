@@ -8,7 +8,7 @@ from typing import Optional, Dict, Any
 import logging
 import json
 from sqlalchemy.orm import Session
-from db_config.crud import add_message_to_session, get_session_messages, create_roadmap, create_goal
+from db_config.crud import add_message_to_session, get_session_messages, create_roadmap, create_goal, get_roadmap_by_session, get_goals_by_roadmap, create_learning_material
 from models.schemas import MessageCreate, MessageRole
 from models.db_models import SkillLevelEnum
 from datetime import datetime
@@ -98,35 +98,108 @@ async def createRoadmapSkeleton(db: Session, session_id: int, user_request: str,
     # 6. return this array and project inside a friendly/professional text
     return async_response.get("response", "")
 
-async def createLearningMaterials(things_to_learn: list[str], end_of_roadmap_project: str) -> str:
+async def createLearningMaterials(db: Session, session_id: int) -> str:
+    """
+    Generate learning materials for all goals in a roadmap.
+    Retrieves the roadmap and its goals, generates materials for each goal,
+    and saves them to the database.
+    """
+    # Get the roadmap for this session
+    roadmap = get_roadmap_by_session(db, session_id)
+    if not roadmap:
+        raise Exception(f"No roadmap found for session {session_id}")
+    
+    # Get all goals for this roadmap
+    goals = get_goals_by_roadmap(db, roadmap.id)
+    if not goals:
+        raise Exception(f"No goals found for roadmap {roadmap.id}")
+    
+    # Prepare the request for the LLM
+    things_to_learn = [{"goal_id": goal.id, "title": goal.title, "description": goal.description} for goal in goals]
     learningmaterialsrequest = {
-        "thingsToLearn": things_to_learn if things_to_learn else [],
-        "endOfRoadmapProject": end_of_roadmap_project if end_of_roadmap_project else ""
+        "thingsToLearn": things_to_learn,
+        "endOfRoadmapProject": roadmap.graduation_project if roadmap.graduation_project else ""
     }
-    prompt = Prompt("createlearningmaterials", format=learningmaterialsrequest)
+    
+    prompt = Prompt("createlearningmaterial", format=learningmaterialsrequest)
     assert prompt is not None, "Prompt 'createlearningmaterials' could not be loaded."
 
     ollama_client = OllamaClient()
-    response = ollama_client.generate(
-        prompt=prompt.get_user_prompt(),
-        system_prompt=prompt.get_system_prompt(),
-        temperature=0.2,
-        format=LearningMaterialResponse.model_json_schema()
-    )
-
-    # crawl web
-
-    # scrape top 3 results
-
-    # Check cache for old generations
-
-    # 
-
-    async_response = await response
-    if not async_response.get("success", False):
-        raise Exception(f"Failed to generate learning materials: {async_response.get('error', 'Unknown error')}")
     
-    return async_response.get("response", "")
+    # Generate materials for each goal
+    materials_created = 0
+    all_materials = []
+    
+    for goal in goals:
+        # Generate learning materials for this specific goal
+        goal_request = {
+            "goal": {
+                "goal_number": goal.goal_number,
+                "title": goal.title,
+                "description": goal.description,
+                "estimated_hours": goal.estimated_hours
+            },
+            "endOfRoadmapProject": roadmap.graduation_project if roadmap.graduation_project else ""
+        }
+        
+        response = ollama_client.generate(
+            prompt=prompt.get_user_prompt(),
+            system_prompt=prompt.get_system_prompt(),
+            temperature=0.2,
+            format=LearningMaterialResponse.model_json_schema()
+        )
+
+        async_response = await response
+        if not async_response.get("success", False):
+            logger.warning(f"Failed to generate materials for goal {goal.id}: {async_response.get('error', 'Unknown error')}")
+            continue
+        
+        try:
+            # Parse the response
+            material_data = json.loads(async_response.get("response", "{}"))
+            material_response = LearningMaterialResponse(**material_data)
+            
+            # Save the learning material to database
+            db_material = create_learning_material(
+                db=db,
+                goal_id=goal.id,
+                title=f"Learning Materials for {goal.title}",
+                material_type="comprehensive",
+                content=material_response.material,
+                description=f"Curated learning materials for {goal.title}",
+                estimated_time_minutes=goal.estimated_hours * 60 if goal.estimated_hours else None,
+                difficulty_level=goal.skill_level,
+                end_of_material_project=material_response.end_of_material_project,
+                relevance_score=1.0,
+                quality_score=0.8
+            )
+            
+            materials_created += 1
+            all_materials.append({
+                "goal": goal.title,
+                "material_id": db_material.id,
+                "material": material_response.material[:200] + "..." if len(material_response.material) > 200 else material_response.material
+            })
+            
+            logger.info(f"Created learning material (ID: {db_material.id}) for goal {goal.id}")
+            
+        except json.JSONDecodeError as e:
+            logger.error(f"Failed to parse learning material response for goal {goal.id}: {e}")
+            continue
+        except Exception as e:
+            logger.error(f"Failed to save learning material for goal {goal.id}: {e}")
+            continue
+    
+    if materials_created == 0:
+        raise Exception("Failed to generate any learning materials")
+    
+    # Return a summary
+    summary = f"Successfully generated {materials_created} learning materials for {len(goals)} goals.\n\n"
+    for material_info in all_materials:
+        summary += f"- {material_info['goal']}: Material created (ID: {material_info['material_id']})\n"
+    
+    logger.info(f"Created {materials_created} learning materials for session {session_id}")
+    return summary
 
 async def master(request: ChatRequest, db: Session) -> Dict[str, Any]:
     """
