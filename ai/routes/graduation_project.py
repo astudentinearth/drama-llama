@@ -691,7 +691,7 @@ async def submit_graduation_answers(
         )
 
 
-@router.get("/{session_id}/graduation-project/submissions")
+@router.get("/{session_id}/submissions")
 async def get_graduation_submissions(
     session_id: int,
     db: Session = Depends(get_db)
