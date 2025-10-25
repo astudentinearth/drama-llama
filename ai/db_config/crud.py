@@ -1066,7 +1066,7 @@ def update_submission_evaluation(
     submission_id: int,
     evaluation_score: float,
     evaluation_feedback: str,
-    rubric_scores: Dict[str, float]
+    rubric_scores: Optional[Dict[str, float]] = None
 ) -> Optional[GraduationProjectSubmission]:
     """Update a submission with evaluation results."""
     submission = db.query(GraduationProjectSubmission).filter(
