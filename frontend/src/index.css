@@ -122,8 +122,28 @@
     }
 }
 
-h1 {
-    @apply font-semibold;
+.prose {
+    h1 {
+    @apply font-semibold text-2xl border-b pb-1 mb-2 mt-3;
+}
+
+h2 {
+    @apply font-semibold text-xl border-b pb-1 mb-2 mt-3;
+}
+
+h3 {
+    @apply font-semibold text-lg mb-2 mt-3;
+}
+
+
+h4 {
+    @apply font-semibold mb-2 mt-3;
+}
+
+pre {
+    @apply bg-muted p-3 rounded-lg border border-border drop-shadow-sm drop-shadow-black/5;
+}
+
 }
 
 .page-transition {

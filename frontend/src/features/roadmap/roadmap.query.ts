@@ -24,6 +24,14 @@ export function useFullSessionQuery(sessionId: number) {
   });
 }
 
+export function useSessionMessagesQuery(sessionId: number) {
+  return useQuery({
+    queryKey: ["roadmap", "session", sessionId, "messages"],
+    queryFn: () => Session(sessionId).getMessages(),
+    enabled: !!sessionId,
+  });
+}
+
 export function useCreateSessionMutation() {
   const queryClient = useQueryClient();
 

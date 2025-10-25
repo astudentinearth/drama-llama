@@ -66,7 +66,7 @@ export default function MaterialsDialog({ materials, goalTitle }: MaterialsDialo
           View Materials ({materials.length})
         </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[900px] max-h-[80vh] overflow-hidden flex flex-col">
+      <DialogContent className="sm:max-w-[1400px] max-h-[90vh] overflow-hidden flex flex-col">
         <DialogHeader>
           <DialogTitle>Learning Materials</DialogTitle>
           <DialogDescription>
@@ -76,7 +76,7 @@ export default function MaterialsDialog({ materials, goalTitle }: MaterialsDialo
         
         <div className="flex flex-1 gap-4 overflow-hidden">
           {/* Materials List */}
-          <div className="w-1/3 border-r pr-4 overflow-y-auto">
+          <div className="w-80 border-r pr-4 overflow-y-auto">
             <div className="space-y-2">
               {materials.map((material) => (
                 <div
