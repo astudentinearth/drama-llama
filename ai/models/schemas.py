@@ -340,6 +340,14 @@ class ResumeEnhancement(BaseModel):
     key_improvements: List[str]
 
 
+# ============= Learning Materials Generation =============
+
+class LearningMaterialResponse(BaseModel):
+    """LearningObjective representation."""
+    goal: Goal
+    material: str
+    end_of_material_project: str
+
 # ============= API Response Wrapper =============
 
 class APIResponse(BaseModel):
