@@ -73,6 +73,13 @@ from .crud import (
     get_user_progress_stats,
     get_next_incomplete_goal,
     search_learning_materials,
+    
+    # Graduation project operations
+    get_graduation_project_question_by_slug,
+    create_graduation_project_question,
+    get_graduation_project_questions_by_session,
+    create_graduation_project_submission,
+    get_submissions_by_session
 )
 
 __all__ = [
@@ -144,5 +151,12 @@ __all__ = [
     'get_user_progress_stats',
     'get_next_incomplete_goal',
     'search_learning_materials',
+
+    # Graduation project operations
+    'get_graduation_project_question_by_slug',
+    'create_graduation_project_question',
+    'get_graduation_project_questions_by_session',
+    'create_graduation_project_submission',
+    'get_submissions_by_session'
 ]
 

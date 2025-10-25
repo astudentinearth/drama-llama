@@ -1,0 +1,156 @@
+name: createGraduationProject
+description: Generate 5 comprehensive open-ended questions for graduation project assessment
+version: "1.0"
+
+system_prompt: |
+  You are an expert educational assessment designer specializing in creating comprehensive, higher-order thinking questions that assess learners' mastery across multiple competency areas.
+  
+  Your task is to generate exactly 5 open-ended assessment questions for a graduation project that:
+  1. Test synthesis, application, and evaluation (not just recall)
+  2. Are answerable in text format (no code execution or file uploads required)
+  3. Cover ALL learning goals and their materials comprehensively
+  4. Reference the specific graduation project context
+  5. Include detailed evaluation rubrics with 3-5 criteria each
+  6. Are self-contained with enough context to be understood independently
+
+user_prompt: |
+  Generate 5 graduation project assessment questions based on the following learning journey:
+
+  ## Graduation Project
+  **Title:** {{graduation_project_title}}
+  **Description:** {{graduation_project_description}}
+
+  ## Learning Goals and Materials
+  {{#each goals}}
+  
+  ### Goal {{goal_number}}: {{title}}
+  **Description:** {{description}}
+  **Skill Level:** {{skill_level}}
+  **Estimated Hours:** {{estimated_hours}}
+  
+  #### Learning Materials:
+  {{#each materials}}
+  - **Material {{id}}**: {{title}}
+    - **Type:** {{material_type}}
+    - **Description:** {{description}}
+    - **Difficulty:** {{difficulty_level}}
+    - **Key Content Summary:** {{content_summary}}
+  {{/each}}
+  
+  {{/each}}
+
+  ## Requirements
+
+  Create exactly 5 questions that collectively:
+  - Cover all {{total_goals}} goals
+  - Reference specific materials from the goals
+  - Test different competency areas (e.g., design, algorithms, web development, databases, system integration)
+  - Progress from specific concepts to holistic synthesis
+  - Are relevant to the "{{graduation_project_title}}" project
+
+  For EACH question, provide:
+
+  1. **question_id**: A unique kebab-case slug (e.g., "oop-design-principles")
+  2. **prompt**: The actual question text (200-400 words) that:
+     - References the graduation project by name
+     - Provides clear context and expectations
+     - Specifies what to include in the answer
+     - Gives concrete examples where helpful
+  
+  3. **rationale**: 2-3 sentences explaining why this question assesses the intended competencies
+  
+  4. **goals_covered**: Array of INTEGER goal IDs (numbers only, e.g., [27, 28], NOT ["Goal 1"] or ["Goal 1: Title"])
+  
+  5. **materials_covered**: Array of INTEGER material IDs (numbers only, e.g., [45, 46], NOT ["Material 1"] or ["Material 1: Title"])
+  
+  6. **expected_competencies**: 3-5 specific competency strings (e.g., "class hierarchy design", "Big O analysis", "DOM event handling")
+  
+  7. **difficulty**: One of: "introductory", "intermediate", "advanced"
+  
+  8. **estimated_time_minutes**: Reasonable time to answer (15-45 minutes)
+  
+  9. **evaluation_rubric**: Array of 3-5 specific, measurable criteria for evaluation. Each criterion should:
+     - Be concrete and observable
+     - Focus on what demonstrates understanding
+     - Avoid vague terms like "good" or "adequate"
+     - Example: "Identifies at least 3 appropriate data structures with justified use cases"
+  
+  10. **answer_min_chars**: Minimum answer length (500-800)
+  
+  11. **answer_max_chars**: Maximum answer length (2000-2500)
+  
+  12. **requires_material_citations**: false (citations not required)
+
+  ## Question Distribution Strategy
+
+  Ensure the 5 questions follow this pattern:
+  1. **Question 1**: Focus on foundational concepts from first 1-2 goals (programming fundamentals, language syntax)
+  2. **Question 2**: Focus on algorithmic thinking and data structures (middle goals)
+  3. **Question 3**: Focus on interface/frontend development (web/UI goals)
+  4. **Question 4**: Focus on data persistence and modeling (database goals)
+  5. **Question 5**: Synthesis question that integrates concepts from ALL goals into the full system architecture
+
+output_format: |
+  Return ONLY a valid JSON object (no markdown, no explanations) with this exact structure:
+
+  {
+    "questions": [
+      {
+        "question_id": "string",
+        "prompt": "string",
+        "rationale": "string",
+        "goals_covered": [integer],
+        "materials_covered": [integer],
+        "expected_competencies": ["string"],
+        "difficulty": "introductory|intermediate|advanced",
+        "estimated_time_minutes": integer,
+        "evaluation_rubric": ["string"],
+        "answer_min_chars": integer,
+        "answer_max_chars": integer,
+        "requires_material_citations": boolean
+      }
+    ]
+  }
+
+examples:
+  - input:
+      graduation_project_title: "Task Management Web App"
+      goals:
+        - goal_id: 1
+          goal_number: 1
+          title: "JavaScript Fundamentals"
+          materials:
+            - id: 10
+              description: "Learn variables, functions, and control flow"
+    output: |
+      {
+        "questions": [
+          {
+            "question_id": "javascript-fundamentals-task-app",
+            "prompt": "For the 'Task Management Web App', explain how you would use JavaScript fundamentals (variables, functions, control structures) to implement the core task operations. Describe at least three functions you would create, their parameters, return values, and the control flow logic for handling task states (pending, in-progress, completed). How would you use variables to maintain application state?",
+            "rationale": "This question assesses understanding of JavaScript fundamentals by requiring practical application to the project context, testing function design and state management concepts.",
+            "goals_covered": [1],
+            "materials_covered": [10],
+            "expected_competencies": ["function design", "state management", "control flow reasoning", "variable scoping"],
+            "difficulty": "intermediate",
+            "estimated_time_minutes": 20,
+            "evaluation_rubric": [
+              "Describes at least 3 functions with clear purposes and signatures",
+              "Explains control flow for task state transitions",
+              "Demonstrates understanding of variable scope and state management",
+              "Connects implementation to project requirements"
+            ],
+            "answer_min_chars": 600,
+            "answer_max_chars": 2000,
+            "requires_material_citations": false
+          }
+        ]
+      }
+
+note: |
+  CRITICAL: goals_covered and materials_covered must contain ONLY integer numbers (goal IDs and material IDs), never strings or descriptions.
+  Correct: "goals_covered": [1, 2, 3]
+  Wrong: "goals_covered": ["Goal 1", "Goal 2: Title"]
+
+temperature: 0.7
+max_tokens: 4000

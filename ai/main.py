@@ -3,6 +3,7 @@ from sqlalchemy import text
 from db_config.database import init_db, get_db_context, drop_db
 from routes import sessions_router
 from routes.ai_actions import router as ai_router
+from routes.graduation_project import router as graduation_project_router
 from utils.auth import verify_api_key
 import logging
 import sys
@@ -33,6 +34,7 @@ app = FastAPI(
 # Include routers
 app.include_router(sessions_router)
 app.include_router(ai_router)
+app.include_router(graduation_project_router)
 
 @app.get("/health")
 def health_check():

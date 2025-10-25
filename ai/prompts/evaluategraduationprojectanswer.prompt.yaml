@@ -1,0 +1,162 @@
+name: evaluateGraduationProjectAnswer
+description: Evaluate a student's answer to a graduation project question
+version: "1.0"
+
+system_prompt: |
+  You are an expert educator and assessment specialist. Your role is to evaluate student answers to graduation project questions fairly, constructively, and comprehensively.
+  
+  You will assess answers based on:
+  1. Coverage of required concepts and competencies
+  2. Accuracy and depth of understanding
+  3. Quality of reasoning and justification
+  4. Clarity of explanation and organization
+  
+  Your evaluation should be:
+  - Fair and objective
+  - Specific and actionable
+  - Encouraging while identifying areas for improvement
+  - Aligned with the evaluation rubric provided
+
+user_prompt: |
+  Evaluate the following student answer to a graduation project question.
+
+  ## Question Context
+  **Question ID:** {{question_id}}
+  **Question Prompt:**
+  {{question_prompt}}
+
+  **Expected Competencies:**
+  {{#each expected_competencies}}
+  - {{this}}
+  {{/each}}
+
+  **Evaluation Rubric:**
+  {{#each evaluation_rubric}}
+  {{@index}}. {{this}}
+  {{/each}}
+
+  ## Learning Materials Context
+  The following materials were covered in the learning journey and should inform the answer:
+
+  {{#each relevant_materials}}
+  ### Material {{id}}: {{title}}
+  **Description:** {{description}}
+  **Key Concepts:** {{key_concepts}}
+  {{/each}}
+
+  ## Student Answer
+  **Answer Length:** {{answer_length}} characters
+  **Citations Provided:** {{citations_count}}
+
+  **Answer Text:**
+  {{answer_text}}
+
+  {{#if citations}}
+  **Citations:**
+  {{#each citations}}
+  - Material {{material_id}}: "{{excerpt}}"
+  {{/each}}
+  {{/if}}
+
+  ## Evaluation Task
+
+  Evaluate this answer comprehensively:
+
+  1. **Per-Rubric Scoring**: For each criterion in the evaluation rubric, assess whether the answer meets it:
+     - Assign a score from 0.0 to 1.0 (0 = not met, 0.5 = partially met, 1.0 = fully met)
+     - Consider partial credit for incomplete but demonstrating understanding
+     - Be fair but rigorous
+
+  2. **Competency Demonstration**: For each expected competency, evaluate if the answer demonstrates understanding
+
+  3. **Overall Quality**: Consider:
+     - Clarity and organization
+     - Depth of analysis
+     - Connection to the graduation project
+     - Practical applicability
+     - Completeness of response
+
+  4. **Overall Score**: Calculate a final score from 0.0 to 1.0 based on:
+     - Average of rubric criterion scores (80% weight)
+     - Overall coherence and depth (20% weight)
+
+  5. **Constructive Feedback**: Provide 2-4 paragraphs of feedback that:
+     - Highlights what was done well
+     - Identifies specific areas for improvement
+     - Suggests concrete ways to strengthen the answer
+     - Connects feedback to learning materials and competencies
+     - Maintains an encouraging, growth-oriented tone
+
+output_format: |
+  Return ONLY a valid JSON object with this exact structure:
+
+  {
+    "overall_score": 0.85,
+    "rubric_scores": {
+      "criterion_1": 0.9,
+      "criterion_2": 0.8,
+      "criterion_3": 1.0,
+      "criterion_4": 0.7,
+      "criterion_5": 0.9
+    },
+    "competency_assessment": {
+      "competency_1": "demonstrated",
+      "competency_2": "partially_demonstrated",
+      "competency_3": "demonstrated"
+    },
+    "citation_quality_score": 0.8,
+    "strengths": [
+      "Specific strength 1",
+      "Specific strength 2",
+      "Specific strength 3"
+    ],
+    "areas_for_improvement": [
+      "Specific area 1 with suggestion",
+      "Specific area 2 with suggestion"
+    ],
+    "feedback": "Comprehensive 2-4 paragraph feedback text that is constructive, specific, and encouraging. It should highlight strengths, identify gaps, and provide actionable suggestions for improvement."
+  }
+
+  IMPORTANT: 
+  - All scores must be between 0.0 and 1.0
+  - rubric_scores keys should be "criterion_1", "criterion_2", etc., matching the rubric order
+  - competency_assessment values must be one of: "demonstrated", "partially_demonstrated", "not_demonstrated"
+  - feedback should be 150-400 words
+
+examples:
+  - input:
+      question_prompt: "Explain how you would design the database schema..."
+      answer_text: "I would create three tables: Users, Transactions, and Categories. Users table has user_id (primary key), username, and email. Transactions has transaction_id (primary key), user_id (foreign key), amount, and date. This follows normalization principles."
+      evaluation_rubric: 
+        - "Proposes normalized schema with at least 3 tables"
+        - "Specifies data types for key columns"
+        - "Includes primary and foreign keys"
+    output: |
+      {
+        "overall_score": 0.65,
+        "rubric_scores": {
+          "criterion_1": 1.0,
+          "criterion_2": 0.5,
+          "criterion_3": 0.8
+        },
+        "competency_assessment": {
+          "data_modeling": "partially_demonstrated",
+          "normalization": "partially_demonstrated",
+          "sql_syntax": "not_demonstrated"
+        },
+        "citation_quality_score": 0.0,
+        "strengths": [
+          "Correctly identified need for three core tables",
+          "Properly included primary and foreign keys",
+          "Demonstrated understanding of table relationships"
+        ],
+        "areas_for_improvement": [
+          "Specify data types for all columns (e.g., VARCHAR(50) for username, DECIMAL(10,2) for amount)",
+          "Include material citations to demonstrate engagement with learning content",
+          "Explain normalization form achieved (1NF, 2NF, 3NF) and how redundancy is eliminated"
+        ],
+        "feedback": "Your answer demonstrates a solid foundational understanding of database design. You correctly identified three core tables and established appropriate relationships using primary and foreign keys, which is excellent. However, to strengthen your answer, you should specify data types for all columns, not just the keys. For example, 'username VARCHAR(50)' or 'amount DECIMAL(10,2)' shows precision in design. Additionally, while you mentioned normalization principles, you didn't cite any learning materials or explain which normal form (1NF, 2NF, 3NF) your schema achieves. Reference specific concepts from the database management materials to demonstrate deeper engagement with the content. Finally, consider discussing how your design prevents data redundancy and supports the specific requirements of the graduation project. Overall, you're on the right track—focus on adding more technical specificity and grounding your design choices in the learning materials."
+      }
+
+temperature: 0.3
+max_tokens: 2000

@@ -393,3 +393,147 @@ def get_server_parameters(tool_name: str) -> Dict[str, Any]:
     if spec:
         return spec.get('server_parameters', {})
     return {}
+
+
+# ============================================================================
+# Graduation Project Tools
+# ============================================================================
+
+TOOL_SPECS["createGraduationProjectQuestions"] = {
+    "description": (
+        "Generate 5 comprehensive open-ended questions for graduation project assessment. "
+        "These questions test synthesis, application, and evaluation across all learning goals. "
+        "Each question includes a detailed evaluation rubric and requires material citations. "
+        "Use this when a learner has completed their roadmap materials and is ready for final assessment."
+    ),
+    "ai_required": [],  # AI generates questions from structured data
+    "ai_parameters": {},
+    "server_parameters": {
+        "session_id": {
+            "type": "integer",
+            "description": "Session ID containing the roadmap and materials",
+            "source": SOURCE_SERVER
+        },
+        "graduation_project_title": {
+            "type": "string",
+            "description": "Title of the graduation project",
+            "source": SOURCE_SERVER
+        },
+        "graduation_project_description": {
+            "type": "string",
+            "description": "Full description of the graduation project",
+            "source": SOURCE_SERVER
+        },
+        "goals": {
+            "type": "array",
+            "description": "Array of goals with their materials",
+            "source": SOURCE_SERVER
+        },
+        "total_goals": {
+            "type": "integer",
+            "description": "Total number of goals",
+            "source": SOURCE_SERVER
+        }
+    },
+    "response_schema": {
+        "type": "object",
+        "properties": {
+            "questions": {
+                "type": "array",
+                "items": {
+                    "type": "object",
+                    "properties": {
+                        "question_id": {"type": "string"},
+                        "prompt": {"type": "string"},
+                        "rationale": {"type": "string"},
+                        "goals_covered": {"type": "array", "items": {"type": "integer"}},
+                        "materials_covered": {"type": "array", "items": {"type": "integer"}},
+                        "expected_competencies": {"type": "array", "items": {"type": "string"}},
+                        "difficulty": {"type": "string", "enum": ["introductory", "intermediate", "advanced"]},
+                        "estimated_time_minutes": {"type": "integer"},
+                        "evaluation_rubric": {"type": "array", "items": {"type": "string"}},
+                        "answer_min_chars": {"type": "integer"},
+                        "answer_max_chars": {"type": "integer"},
+                        "requires_material_citations": {"type": "boolean"}
+                    }
+                }
+            }
+        }
+    }
+}
+
+TOOL_SPECS["evaluateGraduationProjectAnswer"] = {
+    "description": (
+        "Evaluate a student's answer to a graduation project question. "
+        "Provides detailed scoring against the evaluation rubric, assesses competency demonstration, "
+        "evaluates citation quality, and generates constructive feedback. "
+        "Use this when a learner submits answers to graduation project questions."
+    ),
+    "ai_required": [],  # AI evaluates based on structured data
+    "ai_parameters": {},
+    "server_parameters": {
+        "question_id": {
+            "type": "string",
+            "description": "The question identifier",
+            "source": SOURCE_SERVER
+        },
+        "question_prompt": {
+            "type": "string",
+            "description": "The full question text",
+            "source": SOURCE_SERVER
+        },
+        "expected_competencies": {
+            "type": "array",
+            "description": "List of competencies this question tests",
+            "source": SOURCE_SERVER
+        },
+        "evaluation_rubric": {
+            "type": "array",
+            "description": "Evaluation criteria for the question",
+            "source": SOURCE_SERVER
+        },
+        "relevant_materials": {
+            "type": "array",
+            "description": "Learning materials related to this question",
+            "source": SOURCE_SERVER
+        },
+        "answer_text": {
+            "type": "string",
+            "description": "Student's answer text",
+            "source": SOURCE_SERVER
+        },
+        "answer_length": {
+            "type": "integer",
+            "description": "Length of the answer in characters",
+            "source": SOURCE_SERVER
+        },
+        "citations": {
+            "type": "array",
+            "description": "Citations provided by the student",
+            "source": SOURCE_SERVER
+        },
+        "citations_count": {
+            "type": "integer",
+            "description": "Number of citations provided",
+            "source": SOURCE_SERVER
+        }
+    },
+    "response_schema": {
+        "type": "object",
+        "properties": {
+            "overall_score": {"type": "number", "minimum": 0.0, "maximum": 1.0},
+            "rubric_scores": {
+                "type": "object",
+                "additionalProperties": {"type": "number"}
+            },
+            "competency_assessment": {
+                "type": "object",
+                "additionalProperties": {"type": "string"}
+            },
+            "citation_quality_score": {"type": "number", "minimum": 0.0, "maximum": 1.0},
+            "strengths": {"type": "array", "items": {"type": "string"}},
+            "areas_for_improvement": {"type": "array", "items": {"type": "string"}},
+            "feedback": {"type": "string"}
+        }
+    }
+}
