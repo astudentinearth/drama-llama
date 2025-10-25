@@ -22,12 +22,14 @@ from models.schemas import (
 )
 from utils.ai.service import AIService
 from utils.groq_client import GroqClient
+from utils.auth import verify_api_key
 
 
 router = APIRouter(
     prefix="/ai",
     tags=["ai"],
-    responses={404: {"description": "Not found"}}
+    responses={404: {"description": "Not found"}},
+    dependencies=[Depends(verify_api_key)]
 )
 
 

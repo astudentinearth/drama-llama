@@ -1,8 +1,9 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Depends
 from sqlalchemy import text
 from db_config.database import init_db, get_db_context, drop_db
 from routes import sessions_router
 from routes.ai_actions import router as ai_router
+from utils.auth import verify_api_key
 import logging
 import sys
 import os
@@ -45,7 +46,7 @@ def health_check():
     return {"status": "error", "database": "not connected", "error": "Database connection failed"}
 
 @app.get("/drop_db")
-def drop_db_endpoint():
+def drop_db_endpoint(api_key: str = Depends(verify_api_key)):
     try:
         drop_db()
         return {"status": "ok", "database": "dropped"}

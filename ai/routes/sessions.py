@@ -37,11 +37,13 @@ from models.schemas import (
     APIResponse
 )
 from models.db_models import SessionStatusEnum
+from utils.auth import verify_api_key
 
 router = APIRouter(
     prefix="/sessions",
     tags=["sessions"],
-    responses={404: {"description": "Session not found"}}
+    responses={404: {"description": "Session not found"}},
+    dependencies=[Depends(verify_api_key)]
 )
 
 
