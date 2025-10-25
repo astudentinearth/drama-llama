@@ -2,7 +2,7 @@ import asyncio
 import logging
 from typing import Dict, Any, Optional, AsyncGenerator
 from ollama import AsyncClient
-from config import settings
+from config import  settings
 
 logger = logging.getLogger(__name__)
 
@@ -23,6 +23,7 @@ class OllamaClient:
         temperature: float = 0.1,
         max_retries: int = 3,
         format: Optional[Any] = None,
+        tools: Optional[list] = None,
         **kwargs
     ) -> Dict[str, Any]:
         """
@@ -34,6 +35,7 @@ class OllamaClient:
             temperature: Temperature for generation (0.0-1.0)
             max_retries: Maximum number of retries on failure
             format: Response format - 'json' for generic JSON, or a dict/schema for structured output
+            tools: List of tool functions to make available to the model (optional)
             **kwargs: Additional options for Ollama
             
         Returns:
@@ -43,7 +45,6 @@ class OllamaClient:
         if system_prompt:
             messages.append({"role": "system", "content": system_prompt})
         messages.append({"role": "user", "content": prompt})
-        
         options = {
             "temperature": temperature,
             "num_predict": kwargs.get("max_tokens", self.max_tokens),
@@ -57,9 +58,20 @@ class OllamaClient:
             "options": options
         }
         
-        # Add format parameter if specified (for structured output)
-        if format:
+        # Handle format and tools - they should not be used together
+        if format and tools:
+            logger.warning(
+                "Both 'format' and 'tools' were provided. "
+                "Tools take precedence; ignoring 'format' parameter."
+            )
+            # Only add tools when both are present (tools take precedence)
+            chat_params["tools"] = tools
+        elif format:
+            # Add format parameter if specified (for structured output)
             chat_params["format"] = format
+        elif tools:
+            # Add tools if specified
+            chat_params["tools"] = tools
         
         for attempt in range(max_retries):
             try:
@@ -72,15 +84,17 @@ class OllamaClient:
                 if hasattr(response, 'message'):
                     # Object response
                     content = response.message.content if hasattr(response.message, 'content') else str(response.message)
+                    tool_calls = getattr(response.message, 'tool_calls', None)
                     prompt_tokens = getattr(response, 'prompt_eval_count', 0)
                     completion_tokens = getattr(response, 'eval_count', 0)
                 else:
                     # Dict response
                     content = response.get("message", {}).get("content", "")
+                    tool_calls = response.get("message", {}).get("tool_calls")
                     prompt_tokens = response.get("prompt_eval_count", 0)
                     completion_tokens = response.get("eval_count", 0)
                 
-                return {
+                result = {
                     "success": True,
                     "response": content,
                     "model": self.model,
@@ -88,6 +102,12 @@ class OllamaClient:
                     "completion_tokens": completion_tokens,
                     "total_tokens": prompt_tokens + completion_tokens,
                 }
+                
+                # Include tool_calls if present
+                if tool_calls:
+                    result["tool_calls"] = tool_calls
+                
+                return result
                 
             except asyncio.TimeoutError:
                 logger.error(f"Ollama request timeout (attempt {attempt + 1}/{max_retries})")

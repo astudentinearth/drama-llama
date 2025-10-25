@@ -40,6 +40,10 @@ class Settings(BaseSettings):
     rate_limit_per_user: int = int(os.getenv("RATE_LIMIT_PER_USER", "100"))
     rate_limit_window: int = int(os.getenv("RATE_LIMIT_WINDOW", "3600"))
     
+    ai_database_url: str = os.getenv(
+        "AI_DATABASE_URL",
+        "postgresql://ai_user:ai_password@localhost:5432/dramallama_ai"
+    )
     class Config:
         env_file = ".env"
 
