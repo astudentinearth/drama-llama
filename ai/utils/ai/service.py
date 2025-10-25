@@ -177,6 +177,91 @@ class AIService:
             usage=response.get_usage()
         )
     
+    def plan_action_stream(
+        self,
+        session_id: int,
+        user_prompt: str,
+        db: Session
+    ):
+        """
+        Analyze user request and stream the response with tool call instructions.
+        Yields chunks as they arrive from the LLM.
+        
+        Args:
+            session_id: Session ID for context
+            user_prompt: User's current request
+            db: Database session
+        
+        Yields:
+            Streaming chunks from the AI response
+        """
+        # Load session from database
+        session = get_session(db, session_id)
+        if not session:
+            raise ValueError(f"Session {session_id} not found")
+        
+        # Get session message history
+        message_history = get_session_messages(db, session_id)
+        formatted_history = Prompt.format_session_history(message_history)
+        
+        # Exclude the last message if it matches the current user_prompt
+        if formatted_history and formatted_history[-1].get('content') == user_prompt:
+            formatted_history = formatted_history[:-1]
+        
+        # Format history as string for prompt (last 10 messages)
+        history_str = ""
+        if not formatted_history:
+            history_str = "(No previous conversation - this is the first message)"
+        else:
+            for i, msg in enumerate(formatted_history[-10:], 1):
+                role_label = "User said" if msg['role'] == 'user' else "You replied"
+                history_str += f"{i}. {role_label}: {msg['content']}\n"
+        
+        # Check if roadmap exists for context
+        roadmap = get_roadmap_by_session(db, session_id)
+        has_roadmap = roadmap is not None
+        
+        # Conditionally provide tools based on roadmap existence
+        if has_roadmap:
+            available_tools = ["createLearningMaterials"]
+        else:
+            available_tools = ["createRoadmapSkeleton"]
+        
+        # Build context for the AI
+        context_info = f"Session #{session_id}"
+        if has_roadmap:
+            goals = get_goals_by_roadmap(db, roadmap.id)
+            context_info += f"\n- Existing roadmap: {roadmap.graduation_project_title}"
+            context_info += f"\n- Total goals: {len(goals)}"
+            context_info += f"\n- Completed goals: {sum(1 for g in goals if g.is_completed)}"
+            context_info += "\n- Available goals for learning:"
+            for goal in goals:
+                status = "✓ Completed" if goal.is_completed else "○ Not started"
+                context_info += f"\n  * Goal ID {goal.id}: {goal.title} [{status}]"
+        else:
+            context_info += "\n- No roadmap exists yet. You must create one first."
+        
+        # Load master prompt
+        prompt = Prompt('master', {
+            'previousMessages': history_str,
+            'userPrompt': user_prompt,
+            'content': context_info
+        })
+        
+        # Get tool definitions
+        tool_definitions = get_tool_definitions(available_tools)
+        
+        # Execute with tools in streaming mode
+        messages = prompt.get_messages()
+        
+        # Stream the response
+        for chunk in self.client.stream(
+            messages=messages,
+            tools=tool_definitions,
+            tool_choice='auto'
+        ):
+            yield chunk
+    
     def execute_roadmap_creation(
         self,
         session_id: int,
