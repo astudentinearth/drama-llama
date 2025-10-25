@@ -5,7 +5,6 @@ from .db_models import (
     Base,
     SkillLevelEnum,
     RoadmapStatusEnum,
-    User,
     Roadmap,
     RoadmapGoal,
     LearningMaterial,
