@@ -6,7 +6,10 @@ from utils.tool_decision_engine import ToolDecisionEngine, ToolDecisionContext, 
 import asyncio
 from typing import Optional, Dict, Any
 import logging
-
+from sqlalchemy.orm import Session
+from db_config.crud import add_message_to_session, get_session_messages
+from models.schemas import MessageCreate, MessageRole
+from datetime import datetime
 logger = logging.getLogger(__name__)
 """
 When user stated he/she want to apply for a job, how can I develop my self etc. this tool should be triggered.
@@ -84,13 +87,29 @@ async def createLearningMaterials(things_to_learn: list[str], end_of_roadmap_pro
     
     return async_response.get("response", "")
 
-async def master(request: ChatRequest) -> Dict[str, Any]:
+async def master(request: ChatRequest, db: Session) -> Dict[str, Any]:
     """
     Enhanced master function with intelligent tool decision making.
     
     This function now uses the ToolDecisionEngine to intelligently determine
     when and which tools to call based on user intent and context.
     """
+    initial_message = MessageCreate(
+        role=MessageRole.USER,
+        content=request.userPrompt,
+        metadata={
+            "timestamp": datetime.utcnow().isoformat()
+        }
+    )
+
+    session_id = request.session_id
+
+    # get previous messages using session_id
+    previous_messages = get_session_messages(db, session_id)
+
+    # Save user message immediately
+    add_message_to_session(db, session_id, initial_message.role, initial_message.content, initial_message.metadata)
+
     try:
         # Initialize decision engine
         ollama_client = OllamaClient()
@@ -99,7 +118,7 @@ async def master(request: ChatRequest) -> Dict[str, Any]:
         # Create decision context
         context = ToolDecisionContext(
             user_message=request.userPrompt,
-            conversation_history=request.previousMessages,
+            conversation_history=previous_messages,
             available_tools=["createRoadmapSkeleton", "createLearningMaterials"],
             previous_tool_calls=[]  # TODO: Extract from conversation history
         )
@@ -113,8 +132,10 @@ async def master(request: ChatRequest) -> Dict[str, Any]:
         
         # Handle different decision outcomes
         if tool_decision.decision == ToolCallDecision.DECLINE_REQUEST:
+            response_text = "I'm sorry, but I can only help with career and skill development topics. Please ask me about learning paths, skill development, or career guidance."
+            add_message_to_session(db, session_id, MessageRole.ASSISTANT, response_text, {"timestamp": datetime.utcnow().isoformat()})
             return {
-                "response": "I'm sorry, but I can only help with career and skill development topics. Please ask me about learning paths, skill development, or career guidance.",
+                "response": response_text,
                 "decision_metadata": {
                     "decision": tool_decision.decision.value,
                     "reasoning": tool_decision.reasoning,
@@ -126,8 +147,10 @@ async def master(request: ChatRequest) -> Dict[str, Any]:
             clarification_questions = tool_decision.clarification_questions or [
                 "Could you please clarify what you'd like help with? Are you looking for career guidance, skill development, or learning resources?"
             ]
+            response_text = f"I'd be happy to help! {clarification_questions[0]}"
+            add_message_to_session(db, session_id, MessageRole.ASSISTANT, response_text, {"timestamp": datetime.utcnow().isoformat()})
             return {
-                "response": f"I'd be happy to help! {clarification_questions[0]}",
+                "response": response_text,
                 "decision_metadata": {
                     "decision": tool_decision.decision.value,
                     "reasoning": tool_decision.reasoning,
@@ -146,19 +169,30 @@ async def master(request: ChatRequest) -> Dict[str, Any]:
             
             # Generate response based on tool results
             if tool_results:
-                return await _generate_tool_response(ollama_client, tool_results, request)
+                generated_response = await _generate_tool_response(ollama_client, tool_results, request)
+                response_text = generated_response.get("response", "")
+                add_message_to_session(db, session_id, MessageRole.ASSISTANT, response_text, {"timestamp": datetime.utcnow().isoformat()})
+                return generated_response
             else:
                 # Fallback to regular chat if no tools were executed
-                return await _generate_regular_response(ollama_client, request)
+                generated_response = await _generate_regular_response(ollama_client, request)
+                response_text = generated_response.get("response", "")
+                add_message_to_session(db, session_id, MessageRole.ASSISTANT, response_text, {"timestamp": datetime.utcnow().isoformat()})
+                return generated_response
         
         else:  # NO_TOOL
             # Regular conversation without tools
-            return await _generate_regular_response(ollama_client, request)
-    
+            generated_response = await _generate_regular_response(ollama_client, request)
+            response_text = generated_response.get("response", "")
+            add_message_to_session(db, session_id, MessageRole.ASSISTANT, response_text, {"timestamp": datetime.utcnow().isoformat()})
+            return generated_response
+
     except Exception as e:
         logger.error(f"Master function error: {e}")
+        error_response = "I apologize, but I encountered an error processing your request. Please try again."
+        add_message_to_session(db, session_id, MessageRole.ASSISTANT, error_response, {"timestamp": datetime.utcnow().isoformat(), "error": str(e)})
         return {
-            "response": "I apologize, but I encountered an error processing your request. Please try again.",
+            "response": error_response,
             "error": str(e),
             "decision_metadata": {
                 "decision": "error",
