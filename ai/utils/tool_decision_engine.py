@@ -30,7 +30,7 @@ class ToolCallDecision(str, Enum):
     DECLINE_REQUEST = "decline_request"
 
 
-class ToolExecutionResult(str, Enum):
+class ToolExecutionStatus(str, Enum):
     """Tool execution result status."""
     SUCCESS = "success"
     FAILED = "failed"
@@ -65,12 +65,19 @@ class ToolDecision:
 class ToolExecutionResult:
     """Result of tool execution."""
     tool_name: str
-    status: ToolExecutionResult
+    status: ToolExecutionStatus
     result: Any
     error: Optional[str] = None
     execution_time: float = 0.0
     metadata: Dict[str, Any] = None
 
+class IntentionResult:
+    """Result of intention detection."""
+    intent: IntentType
+    confidence: float
+    extracted_params: Dict[str, Any]
+    requires_clarification: bool
+    clarification_questions: List[str]
 
 class ToolDecisionEngine:
     """
@@ -199,36 +206,28 @@ class ToolDecisionEngine:
         - GENERATE_ROADMAP: User wants a learning roadmap or career path
         - GENERATE_COURSE: User wants learning materials or course content
         
+        Available Extracted Parameters:
+        - job_listings (list of links to job listings)
+
         Determine:
         1. The most likely intent
         2. Confidence score (0.0-1.0)
         3. Any extracted parameters
         4. Whether clarification is needed
-        
-        Respond in JSON format:
-        {{
-            "intent": "intent_type",
-            "confidence": 0.8,
-            "extracted_params": {{}},
-            "requires_clarification": false,
-            "clarification_questions": []
-        }}
         """
         
         try:
             response = await self.ollama_client.generate(
-                prompt=prompt,
-                system_prompt="You are an expert at analyzing user intent. Be precise and confident in your analysis.",
+                prompt="Analyze the user's intent from their message and conversation history. Only respond in JSON format.",
+                system_prompt=prompt,
                 temperature=0.1,
-                format="json"
+                format=IntentDetectionResponse.model_json_schema()
             )
+
+            print(response)
             
-            if response.get("success"):
-                result = json.loads(response.get("response", "{}"))
-                return IntentDetectionResponse(**result)
-            else:
-                raise Exception(f"LLM intent detection failed: {response.get('error')}")
-                
+            response_json = json.loads(response.get("response", ""))
+            return IntentDetectionResponse(**response_json)
         except Exception as e:
             logger.error(f"LLM intent detection error: {e}")
             return IntentDetectionResponse(
@@ -484,7 +483,7 @@ class ToolDecisionEngine:
                     logger.warning(f"Tool validation failed for {tool_name}: {validation.errors}")
                     execution_result = ToolExecutionResult(
                         tool_name=tool_name,
-                        status=ToolExecutionResult.FAILED,
+                        status=ToolExecutionStatus.FAILED,
                         result=None,
                         error=f"Validation failed: {', '.join(validation.errors)}",
                         execution_time=0.0,
@@ -506,7 +505,7 @@ class ToolDecisionEngine:
                 
                 execution_result = ToolExecutionResult(
                     tool_name=tool_name,
-                    status=ToolExecutionResult.SUCCESS if success else ToolExecutionResult.FAILED,
+                    status=ToolExecutionStatus.SUCCESS if success else ToolExecutionStatus.FAILED,
                     result=result,
                     error=None if success else message,
                     execution_time=execution_time,
@@ -542,7 +541,7 @@ class ToolDecisionEngine:
                 
                 execution_result = ToolExecutionResult(
                     tool_name=tool_name,
-                    status=ToolExecutionResult.FAILED,
+                    status=ToolExecutionStatus.FAILED,
                     result=None,
                     error=str(e),
                     execution_time=execution_time,
@@ -623,7 +622,7 @@ class ToolDecisionEngine:
         if not self.tool_execution_history:
             return 0.0
         
-        successful = len([r for r in self.tool_execution_history if r.status == ToolExecutionResult.SUCCESS])
+        successful = len([r for r in self.tool_execution_history if r.status == ToolExecutionStatus.SUCCESS])
         total = len(self.tool_execution_history)
         
         return successful / total if total > 0 else 0.0
