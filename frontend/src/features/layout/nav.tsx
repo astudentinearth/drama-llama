@@ -15,7 +15,7 @@ export default function Nav() {
   const myCompany = useMyCompanyQuery();
 
   return (
-    <nav className="bg-card border-b items-center w-full h-fit px-8 py-3 shrink-0 flex gap-2">
+    <nav className="bg-card border rounded-xl drop-shadow-xl drop-shadow-black/2 items-center w-[calc(100%-32px)] mt-4 h-fit pl-8 pr-3 py-3 shrink-0 flex gap-2">
       <Logo className="text-2xl" />
       <div className="w-5"></div>
       <NavLink to="/roadmaps">Roadmaps</NavLink>

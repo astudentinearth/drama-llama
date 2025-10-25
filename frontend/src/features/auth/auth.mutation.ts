@@ -1,6 +1,6 @@
 import { useMutation } from "@tanstack/react-query";
-import { login, register, logout, type RegisterDTO } from "./auth.api";
 import { useNavigate } from "react-router-dom";
+import { login, logout, register } from "./auth.api";
 
 export interface LoginMutationArgs {
   username: string;

@@ -1,7 +1,7 @@
 import { Link, useParams } from "react-router-dom";
 import { useSessionsQuery } from "./roadmap.query";
-import { Button } from "@/components/ui/button";
-import { BookOpen, Plus } from "lucide-react";
+import CreateSessionDialog from "./create-session-dialog";
+import { BookOpen } from "lucide-react";
 
 export default function SessionsSidebar() {
   const { sessionId } = useParams<{ sessionId: string }>();
@@ -9,7 +9,7 @@ export default function SessionsSidebar() {
 
   if (isLoading) {
     return (
-      <div className="w-64 border-r bg-card p-4">
+      <div className="w-64 border bg-card p-4">
         <div className="flex items-center gap-2 mb-4">
           <BookOpen className="w-5 h-5" />
           <h2 className="font-semibold">Learning Sessions</h2>
@@ -25,7 +25,7 @@ export default function SessionsSidebar() {
 
   if (error) {
     return (
-      <div className="w-64 border-r bg-card p-4">
+      <div className="w-64 border rounded-2xl drop-shadow-sm bg-card p-4">
         <div className="flex items-center gap-2 mb-4">
           <BookOpen className="w-5 h-5" />
           <h2 className="font-semibold">Learning Sessions</h2>
@@ -38,15 +38,13 @@ export default function SessionsSidebar() {
   }
 
   return (
-    <div className="w-64 border-r bg-card p-4">
-      <div className="flex items-center justify-between mb-4">
+    <div className="w-64 border rounded-2xl drop-shadow-sm drop-shadow-black/5 bg-card p-2">
+      <div className="flex items-center justify-between mb-4 px-2 pt-2">
         <div className="flex items-center gap-2">
           <BookOpen className="w-5 h-5" />
           <h2 className="font-semibold">Learning Sessions</h2>
         </div>
-        <Button variant="ghost" size="icon-sm">
-          <Plus className="w-4 h-4" />
-        </Button>
+        <CreateSessionDialog variant="icon" size="icon-sm" />
       </div>
 
       <div className="space-y-1">
@@ -54,16 +52,13 @@ export default function SessionsSidebar() {
           <Link
             key={session.id}
             to={`/roadmaps/${session.id}`}
-            className={`block p-3 rounded-md text-sm transition-colors hover:bg-accent ${
+            className={`block p-3 rounded-lg border text-sm transition-colors hover:bg-secondary/50 hover:border-primary ${
               sessionId === session.id.toString()
-                ? "bg-accent text-accent-foreground"
+                ? "bg-secondary border-primary text-foreground"
                 : "text-muted-foreground hover:text-foreground"
             }`}
           >
             <div className="font-medium truncate">{session.session_name}</div>
-            <div className="text-xs text-muted-foreground mt-1 truncate">
-              {session.description}
-            </div>
             <div className="flex items-center gap-2 mt-2">
               <div
                 className={`w-2 h-2 rounded-full ${
@@ -85,10 +80,7 @@ export default function SessionsSidebar() {
           <div className="text-muted-foreground text-sm mb-2">
             No learning sessions yet
           </div>
-          <Button variant="outline" size="sm">
-            <Plus className="w-4 h-4 mr-2" />
-            Create Session
-          </Button>
+          <CreateSessionDialog size="sm" />
         </div>
       )}
     </div>
