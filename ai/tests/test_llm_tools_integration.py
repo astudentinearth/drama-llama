@@ -98,4 +98,4 @@ class TestCreateRoadmapSkeletonIntegration:
         
         # At least one relevant keyword should be present
         # Note: We don't require all keywords as the LLM may use different terminology
-        assert len(found) >= 0, f"Expected keywords not found. Found: {found}"
+        assert len(found) > 0, f"Expected keywords not found. Found: {found}"
