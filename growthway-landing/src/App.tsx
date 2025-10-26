@@ -1,9 +1,10 @@
-import Navbar from "./components/navbar"
 import Topbar from "./components/topbar"
 import LogoMarquee from "./components/logo-marquee"
+import { PointerHighlight } from "@/components/ui/pointer-highlight";
 import { HoverBorderGradient } from "./components/ui/hover-border-gradient"
 import { TypewriterEffectSmooth } from "./components/ui/typewriter-effect"
 import { motion } from "motion/react"
+import { AnimatedSection, AnimatedElement } from "./components/ui/animated-section"
 
 function App() {
   const words = [
@@ -27,33 +28,37 @@ function App() {
 
   return (
     <div className="min-w-full z-100 relative">
-      <div className="fixed w-full">
+      <div className="fixed w-full z-150">
         <Topbar />
         {/* <Navbar /> */}
       </div>
 
       <section className="max-w-5xl mx-auto space-y-6 flex flex-col justify-evenly  min-h-[80vh]">
-        <div>
+        <AnimatedSection direction="up" delay={0.2} className="container">
           <h1 className="text-4xl font-semibold mb-24">groowy</h1>
           <h3 className="text-lg ">Personalized growth, Smarter hiring.</h3>
           <TypewriterEffectSmooth words={words} className="text-7xl font-semibold" />
-        </div>
-        <div className="flex flex-row space-x-6 self-center justify-between w-full">
+        </AnimatedSection>
+        <AnimatedElement delay={0.6} className="flex flex-row space-x-6 self-center justify-between w-full">
           <HoverBorderGradient className="px-14 py-4 rounded-3xl dark:bg-black bg-white text-black dark:text-white flex items-center" >Start with Individual Account</HoverBorderGradient>
           <HoverBorderGradient className="px-18 py-4 rounded-3xl dark:bg-black bg-white text-black dark:text-white flex items-center">Start with Your Company</HoverBorderGradient>
-        </div>
+        </AnimatedElement>
       </section>
-      <section className="mb-48 text-center">
+      <AnimatedSection direction="up" className="mb-48 text-center">
         <div className="flex flex-row items-center justify-center space-x-12 mb-8">
           <hr className="w-48" />
-          <h4 className="text-2xl font-semibold">Clients</h4>
+          <h4 className="text-2xl font-semibold">Our Clients</h4>
           <hr className="w-48" />
         </div>
         <LogoMarquee />
-      </section>
-      <motion.section className="max-w-5xl mx-auto flex flex-col items-center h-screen space-y-16">
-        <h1 className="text-5xl">Smart Careers, Supercharged by AI</h1>
-        <img src="/chart.png" alt="" className="max-w-5xl mx-auto" />
+      </AnimatedSection>
+      <motion.section className="max-w-5xl mx-auto flex flex-col items-center h-screen space-y-16 pb-24 container">
+        <AnimatedElement delay={0.1} scale>
+          <h1 className="text-5xl">Smart Careers, Supercharged by <PointerHighlight containerClassName="inline-block mx-1">AI</PointerHighlight></h1>
+        </AnimatedElement>
+        <AnimatedElement delay={0.3} scale>
+          <img src="/chart.png" alt="" className="max-w-5xl mx-auto" />
+        </AnimatedElement>
       </motion.section>
     </div>
   )
