@@ -39,7 +39,7 @@ function App() {
 
       <section className="max-w-5xl mx-auto space-y-6 flex flex-col justify-evenly  min-h-[80vh]">
         <AnimatedSection direction="up" delay={0.2} className="container">
-          <h1 className="text-4xl font-semibold mb-24"><img src="/logo.png" alt="Groowy" className="inline-block h-12 w-auto me-2" />Groowy</h1>
+          <h1 className="text-4xl font-semibold mb-24"><img src="/logo.png" alt="groowy" className="inline-block h-12 w-auto me-2" />groowy</h1>
           <h3 className="text-lg ">Personalized growth, Smarter hiring.</h3>
           <TypewriterEffectSmooth words={words} className="text-7xl font-semibold" />
         </AnimatedSection>

@@ -1,6 +1,6 @@
-# Groowy Landing Page
+# groowy Landing Page
 
-A modern, animated landing page for Groowy - an AI-powered career growth platform that connects skills with their future opportunities.
+A modern, animated landing page for groowy - an AI-powered career growth platform that connects skills with their future opportunities.
 
 ## 🚀 Project Overview
 
@@ -109,7 +109,7 @@ yarn preview
 ```
 growthway-landing/
 ├── public/                 # Static assets
-│   ├── logo.png           # Main Groowy logo
+│   ├── logo.png           # Main groowy logo
 │   ├── chart.png          # AI features visualization
 │   ├── graph.png          # Additional graphics
 │   └── logos/             # Partner company logos
@@ -129,7 +129,7 @@ growthway-landing/
 
 ## 🔗 Integration with Main Application
 
-The landing page integrates with the main Groowy application through:
+The landing page integrates with the main groowy application through:
 
 - **Authentication Flow**: Sign-up buttons redirect to `/app` for user registration
 - **Company Onboarding**: Company sign-up flow connects to backend services
@@ -160,4 +160,4 @@ The landing page integrates with the main Groowy application through:
 
 ## 📄 License
 
-This project is part of the Groowy platform. See the main project repository for licensing information.
+This project is part of the groowy platform. See the main project repository for licensing information.
