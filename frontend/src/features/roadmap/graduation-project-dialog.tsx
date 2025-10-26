@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -18,7 +18,7 @@ import {
   useGenerateGraduationQuestionsMutation,
   useSubmitGraduationAnswersMutation,
 } from "./roadmap.query";
-import type { IAnswer, IQuestion } from "./roadmap.types";
+import type { IAnswer, IQuestion, IEvaluation, SubmitAnswersResponse } from "./roadmap.types";
 
 interface GraduationProjectDialogProps {
   open: boolean;
@@ -34,6 +34,7 @@ export default function GraduationProjectDialog({
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [currentStep, setCurrentStep] = useState<"loading" | "questions" | "submitting" | "success">("loading");
   const [hasTriedGeneration, setHasTriedGeneration] = useState(false);
+  const [submissionResult, setSubmissionResult] = useState<SubmitAnswersResponse | null>(null);
 
   const { data: questionsData, isLoading: questionsLoading, refetch } = useGraduationQuestionsQuery(sessionId);
   const generateQuestionsMutation = useGenerateGraduationQuestionsMutation();
@@ -42,9 +43,7 @@ export default function GraduationProjectDialog({
   const questions = questionsData?.data?.questions || [];
   const graduationProject = questionsData?.data?.graduation_project;
 
-    useEffect(() => {
-        console.log("data", questionsData);
-    }, [questionsData])
+
 
   // Generate questions if not available
   const handleGenerateQuestions = async () => {
@@ -75,10 +74,11 @@ export default function GraduationProjectDialog({
     }));
 
     try {
-      await submitAnswersMutation.mutateAsync({
+      const result = await submitAnswersMutation.mutateAsync({
         sessionId,
         answers: answersArray,
       });
+      setSubmissionResult(result);
       setCurrentStep("success");
     } catch (error) {
       console.error("Failed to submit answers:", error);
@@ -104,6 +104,7 @@ export default function GraduationProjectDialog({
     setHasTriedGeneration(false);
     setCurrentStep("loading");
     setAnswers({});
+    setSubmissionResult(null);
   }
 
   const getDifficultyColor = (difficulty: string) => {
@@ -120,9 +121,22 @@ export default function GraduationProjectDialog({
     return answer.length >= question.answer_min_chars && answer.length <= question.answer_max_chars;
   };
 
-  console.log(questions)
+
 
   const allAnswersValid = questions.every(isAnswerValid);
+
+  // Calculate average score from submission result
+  const calculateAverageScore = () => {
+    if (!submissionResult?.data?.evaluations) return 0;
+    
+    const evaluations = submissionResult.data.evaluations;
+    const validEvaluations = evaluations.filter((evaluation: IEvaluation) => evaluation.error === null);
+    
+    if (validEvaluations.length === 0) return 0;
+    
+    const totalScore = validEvaluations.reduce((sum: number, evaluation: IEvaluation) => sum + evaluation.score, 0);
+    return (totalScore / validEvaluations.length) * 100; // Convert to percentage
+  };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -254,16 +268,57 @@ export default function GraduationProjectDialog({
         )}
 
         {currentStep === "success" && (
-          <div className="flex items-center justify-center py-8">
-            <div className="text-center">
+          <div className="space-y-6">
+            <div className="text-center py-6">
               <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
                 <Target className="h-8 w-8 text-green-600" />
               </div>
               <h3 className="text-lg font-semibold mb-2">Assessment Complete!</h3>
-              <p className="text-muted-foreground">
+              <p className="text-muted-foreground mb-4">
                 Your graduation project assessment has been submitted successfully.
               </p>
+              
+              {submissionResult && (
+                <div className="bg-muted/50 rounded-lg p-4 max-w-md mx-auto">
+                  <div className="text-2xl font-bold text-primary mb-1">
+                    {calculateAverageScore().toFixed(1)}%
+                  </div>
+                  <div className="text-sm text-muted-foreground">
+                    Average Score
+                  </div>
+                </div>
+              )}
             </div>
+
+            {submissionResult?.data?.evaluations && (
+              <div className="space-y-4">
+                <h4 className="font-semibold">Question Results:</h4>
+                <div className="space-y-3">
+                  {submissionResult.data.evaluations.map((evaluation: IEvaluation, index: number) => (
+                    <Card key={evaluation.submission_id} className="p-4">
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="font-medium">Question {index + 1}</span>
+                        <Badge 
+                          variant={evaluation.score >= 0.7 ? "default" : evaluation.score >= 0.4 ? "secondary" : "destructive"}
+                        >
+                          {(evaluation.score * 100).toFixed(1)}%
+                        </Badge>
+                      </div>
+                      {evaluation.feedback && (
+                        <p className="text-sm text-muted-foreground">
+                          {evaluation.feedback}
+                        </p>
+                      )}
+                      {evaluation.error && (
+                        <p className="text-sm text-red-500">
+                          Error: {evaluation.error}
+                        </p>
+                      )}
+                    </Card>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         )}
 

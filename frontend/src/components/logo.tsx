@@ -4,11 +4,12 @@ export default function Logo(props: { className?: string }) {
   return (
     <span
       className={cn(
-        "flex text-center justify-center font-extrabold text-brand text-4xl",
+        "flex text-center justify-center gap-2 font-extrabold text-brand text-4xl",
         props.className,
       )}
     >
-      GrowthWay
+      <img src="/logo.png" className="h-8"/>
+      groowy
     </span>
   );
 }

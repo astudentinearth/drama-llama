@@ -148,12 +148,22 @@ export interface SubmitAnswersRequest {
     answers: IAnswer[];
 }
 
+export interface IEvaluation {
+    submission_id: number;
+    question_id: string;
+    score: number;
+    feedback: string;
+    rubric_scores: Record<string, number> | null;
+    error: string | null;
+}
+
 export interface SubmitAnswersResponse {
     success: true;
     data: {
+        session_id: number;
+        submission_ids: number[];
         message: string;
-        score?: number;
-        feedback?: string;
+        evaluations: IEvaluation[];
     };
     error: null;
 }

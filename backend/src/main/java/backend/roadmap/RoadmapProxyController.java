@@ -22,6 +22,8 @@ import java.util.Map;
 
 import backend.roadmap.dto.CreateSessionDTO;
 import backend.roadmap.dto.ChatMessageDTO;
+import backend.roadmap.dto.CreateQuizDTO;
+import backend.roadmap.dto.CreateQuizAttemptDTO;
 
 @RestController
 @RequestMapping("/api/roadmap")
@@ -189,5 +191,42 @@ public class RoadmapProxyController {
                                                                 @RequestHeader HttpHeaders headers,
                                                                 @RequestBody(required = false) byte[] body) {
         return proxyPost("/ai/graduation-project/{session_id}/submit", Map.of("session_id", sessionId), body, headers);
+    }
+
+    @PostMapping("/ai/sessions/{sessionId}/quizzes")
+    public Mono<ResponseEntity<byte[]>> createQuiz(@PathVariable("sessionId") String sessionId,
+                                                   @RequestBody CreateQuizDTO dto) {
+        String url = buildUrl("/ai/sessions/{session_id}/quizzes", Map.of("session_id", sessionId));
+        return webClient.post()
+                .uri(url)
+                .header("X-Api-Key", aiServiceApiKey == null ? "" : aiServiceApiKey)
+                .contentType(MediaType.APPLICATION_JSON)
+                .bodyValue(dto)
+                .exchangeToMono(this::toResponseEntity);
+    }
+
+    @PostMapping("/ai/sessions/{sessionId}/quizzes/{quizId}/attempts")
+    public Mono<ResponseEntity<byte[]>> createQuizAttempt(@PathVariable("sessionId") String sessionId,
+                                                          @PathVariable("quizId") Long quizId,
+                                                          @RequestBody CreateQuizAttemptDTO dto) {
+        var user = authContext.getCurrentUser();
+        dto.setUser_id(user.getId().toString());
+        dto.setQuiz_id(quizId);
+        String url = buildUrl("/ai/sessions/{session_id}/quizzes/{quiz_id}/attempts", Map.of("session_id", sessionId, "quiz_id", quizId));
+        return webClient.post()
+                .uri(url)
+                .header("X-Api-Key", aiServiceApiKey == null ? "" : aiServiceApiKey)
+                .contentType(MediaType.APPLICATION_JSON)
+                .bodyValue(dto)
+                .exchangeToMono(this::toResponseEntity);
+    }
+
+    @PostMapping("/ai/sessions/{sessionId}/quiz-attempts/{attemptId}/submit")
+    public Mono<ResponseEntity<byte[]>> submitQuizAttempt(@PathVariable("sessionId") String sessionId,
+                                                          @PathVariable("attemptId") Long attemptId,
+                                                          @RequestHeader HttpHeaders headers,
+                                                          @RequestBody(required = false) byte[] body) {
+        return proxyPost("/ai/sessions/{session_id}/quiz-attempts/{attempt_id}/submit",
+                Map.of("session_id", sessionId, "attempt_id", attemptId), body, headers);
     }
 }

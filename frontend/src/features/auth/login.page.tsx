@@ -5,6 +5,7 @@ import { Label } from "@/components/ui/label";
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { useLoginMutation } from "./auth.mutation";
+import Logo from "@/components/logo";
 
 export default function LoginPage() {
   const [username, setUsername] = useState("");
@@ -12,9 +13,7 @@ export default function LoginPage() {
   const mutation = useLoginMutation();
   return (
     <Card className="w-96 page-transition h-fit p-4 px-6 pb-6 gap-4 absolute left-1/2 -translate-x-1/2 top-1/2 -translate-y-1/2">
-      <span className="flex w-full text-center justify-center font-extrabold text-brand text-4xl">
-        GrowthWay
-      </span>
+      <Logo />
       <div />
       <h1 className="text-2xl">Sign in</h1>
       <Label>Username</Label>
