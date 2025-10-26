@@ -306,7 +306,6 @@ class Quiz(Base):
     # Quiz details
     title = Column(String(500), nullable=False)
     description = Column(Text)
-    difficulty_level = Column(SQLEnum(SkillLevelEnum), default=SkillLevelEnum.BEGINNER)
     
     # Quiz settings
     time_limit_minutes = Column(Integer)  # Optional time limit
@@ -350,7 +349,6 @@ class QuizQuestion(Base):
     explanation = Column(Text)  # Explanation of why the correct answer is right
     
     # Question metadata
-    difficulty_level = Column(SQLEnum(SkillLevelEnum), default=SkillLevelEnum.BEGINNER)
     points = Column(Integer, default=1)  # Points for correct answer
     
     # Metadata

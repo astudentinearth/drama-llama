@@ -1022,7 +1022,6 @@ def create_quiz(
     goal_id: int,
     title: str,
     description: Optional[str] = None,
-    difficulty_level: SkillLevelEnum = SkillLevelEnum.BEGINNER,
     time_limit_minutes: Optional[int] = None,
     passing_score_percentage: float = 70.0,
     max_attempts: int = 3,
@@ -1033,7 +1032,6 @@ def create_quiz(
         goal_id=goal_id,
         title=title,
         description=description,
-        difficulty_level=difficulty_level,
         time_limit_minutes=time_limit_minutes,
         passing_score_percentage=passing_score_percentage,
         max_attempts=max_attempts,
@@ -1054,7 +1052,6 @@ def create_quiz(
                 options=question_data['options'],
                 correct_answer=question_data['correct_answer'],
                 explanation=question_data.get('explanation'),
-                difficulty_level=question_data.get('difficulty_level', difficulty_level),
                 points=question_data.get('points', 1)
             )
         
@@ -1164,7 +1161,6 @@ def create_quiz_question(
     options: List[str],
     correct_answer: str,
     explanation: Optional[str] = None,
-    difficulty_level: SkillLevelEnum = SkillLevelEnum.BEGINNER,
     points: int = 1
 ) -> QuizQuestion:
     """Create a new quiz question."""
@@ -1175,7 +1171,6 @@ def create_quiz_question(
         options=options,
         correct_answer=correct_answer,
         explanation=explanation,
-        difficulty_level=difficulty_level,
         points=points
     )
     db.add(question)

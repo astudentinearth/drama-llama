@@ -386,6 +386,52 @@ class AIService:
         self._save_roadmap_to_db(session_id, roadmap_response, tool_arguments, db)
         return roadmap_response
 
+    def execute_roadmap_skeleton_editing(
+        self,
+        session_id: int,
+        tool_arguments: Dict[str, Any],
+        db: Session
+    ) -> RoadmapSkeletonResponse:
+        """
+        Execute editRoadmapSkeleton with structured output.
+        Returns validated Pydantic model and saves to database.
+        """
+        # Get the roadmap
+        roadmap = get_roadmap_by_session(db, session_id)
+        if not roadmap:
+            raise ValueError(f"No roadmap found for session {session_id}")
+        
+        # Load the roadmap editing prompt
+        prompt = Prompt('editroadmapskeleton', {
+            'userRequest': tool_arguments.get('userRequest', ''),
+            'currentRoadmap': tool_arguments.get('currentRoadmap', 'Not provided'),
+        })
+        
+        # Get response format from prompt
+        response_format = prompt.get_response_format()
+        
+        # Execute with structured output
+        messages = prompt.get_messages()
+        response = self.client.execute(
+            messages=messages,
+            response_format=response_format,
+            temperature=prompt.get_temperature()
+        )
+        
+        # Parse the JSON response
+        content = response.get_content()
+        try:
+            roadmap_data = json.loads(content)
+        except json.JSONDecodeError as e:
+            raise ValueError(f"Failed to parse roadmap response: {e}")
+        
+        # Validate with Pydantic
+        roadmap_response = RoadmapSkeletonResponse(**roadmap_data)
+        
+        # Save to database
+        self._save_roadmap_to_db(session_id, roadmap_response, tool_arguments, db)
+        return roadmap_response
+
     def execute_material_creation(
         self,
         goal_id: int,
@@ -530,6 +576,41 @@ class AIService:
             difficulty_level=difficulty_level,
             project_requirements=exercises_list  # placeholder until structured exercises are added
         )
+    
+    def _save_quiz_to_db(
+        self,
+        goal_id: int,
+        quiz_response: QuizForGoalResponse,
+        db: Session
+    ):
+        """Save generated quiz to database."""
+        from db_config.crud import create_quiz
+        
+        # Convert quiz questions to the format expected by create_quiz
+        questions_data = []
+        for question in quiz_response.quiz:
+            questions_data.append({
+                'question_text': question.question,
+                'options': question.options,
+                'correct_answer': question.correctAnswer,
+                'explanation': question.explanation,
+                'points': 1
+            })
+        
+        # Create quiz with questions
+        quiz = create_quiz(
+            db=db,
+            goal_id=goal_id,
+            title=f"Quiz for Goal {goal_id}",
+            description=f"Generated quiz questions for learning goal",
+            time_limit_minutes=30,  # Default 30 minutes
+            passing_score_percentage=70.0,
+            max_attempts=3,
+            questions_data=questions_data
+        )
+        
+        return quiz
+    
     def extract_cv_information(
         self,
         user_cv: str,
@@ -561,21 +642,32 @@ class AIService:
         # Create prompt for quiz generation
         prompt = Prompt('createquizforgoal', {
             'learningGoal': goal.title,
-            'goalDescription': goal.description,
-            'difficultyLevel': goal.skill_level.value
+            'goalDescription': goal.description
         })
         
+        # Get response format from prompt
+        response_format = prompt.get_response_format()
+        
+        # Execute with structured output
         messages = prompt.get_messages()
         response = self.client.execute(
             messages=messages,
+            response_format=response_format,
             temperature=prompt.get_temperature()
         )
         
-        # Parse the response
+        # Parse the JSON response
         content = response.get_content()
         try:
             quiz_data = json.loads(content)
-            return QuizForGoalResponse(**quiz_data)
-        except (json.JSONDecodeError, ValueError) as e:
-            raise ValueError(f"Failed to parse quiz response: {str(e)}")
+        except json.JSONDecodeError as e:
+            raise ValueError(f"Failed to parse quiz response: {e}")
+        
+        # Validate with Pydantic
+        quiz_response = QuizForGoalResponse(**quiz_data)
+        
+        # Save quiz to database
+        self._save_quiz_to_db(goal_id, quiz_response, db)
+        
+        return quiz_response
         

@@ -874,28 +874,46 @@ def _execute_tool_call_sync(
 async def create_quiz_endpoint(
     session_id: int,
     quiz_data: QuizCreate,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    ai_service: AIService = Depends(get_ai_service)
 ):
     """Create a new quiz for a learning goal in a session."""
+    session = get_session(db, session_id)
+    if not session:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Session {session_id} not found"
+        )
+    from db_config.crud import get_goal
+    goal = get_goal(db, quiz_data.goal_id)
+    if not goal:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Goal {quiz_data.goal_id} not found"
+        )
     try:
+        quiz_response = ai_service.execute_quiz_creation(
+            goal_id=quiz_data.goal_id,
+            session_id=session_id,
+            db=db
+        )
         # Convert questions data to the format expected by create_quiz
         questions_data = []
-        for question in quiz_data.questions:
+        for question in quiz_response.quiz:
             questions_data.append({
-                'question_text': question.question_text,
+                'question_text': question.question,
                 'options': question.options,
-                'correct_answer': question.correct_answer,
-                'explanation': question.explanation,
-                'points': question.points
+                'correct_answer': question.correctAnswer,
+                'points': 1,
+                'explanation': question.explanation
             })
-        
+
         quiz = create_quiz(
             db=db,
             goal_id=quiz_data.goal_id,
-            title=quiz_data.title,
-            description=quiz_data.description,
-            difficulty_level=quiz_data.difficulty_level,
-            time_limit_minutes=quiz_data.time_limit_minutes,
+            title=goal.title,
+            description=goal.description,
+            time_limit_minutes=quiz_data.time_limit_minutes or 30,
             passing_score_percentage=quiz_data.passing_score_percentage,
             max_attempts=quiz_data.max_attempts,
             questions_data=questions_data

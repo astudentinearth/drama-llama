@@ -53,9 +53,6 @@ messages:
       ## Goal Description
       {{goalDescription}}
 
-      ## Difficulty Level
-      {{difficultyLevel}}
-
       # Instructions
       - Create 5-10 multiple choice questions based on the provided learning goal
       - Each question should have exactly 4 options (A, B, C, D)
@@ -63,7 +60,6 @@ messages:
       - Ensure only one correct answer per question
       - Make incorrect options plausible but clearly wrong
       - Provide clear explanations for why the correct answer is right
-      - Vary question difficulty within the specified level
       - Use clear, concise language appropriate for the target audience
 
       # Question Types to Include
