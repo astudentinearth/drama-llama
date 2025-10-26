@@ -1,6 +1,7 @@
 from typing import List, Optional, Dict, Any
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 from enum import Enum
+from datetime import datetime
 
 
 # ============= Common Models =============
@@ -94,6 +95,13 @@ class SessionResponse(BaseModel):
     created_at: str
     updated_at: str
     completed_at: Optional[str]
+    
+    @field_validator('created_at', 'updated_at', 'completed_at', mode='before')
+    @classmethod
+    def datetime_to_str(cls, v):
+        if isinstance(v, datetime):
+            return v.isoformat()
+        return v
     
     class Config:
         from_attributes = True
@@ -307,6 +315,13 @@ class QuizQuestionResponse(BaseModel):
     created_at: str
     updated_at: str
     
+    @field_validator('created_at', 'updated_at', mode='before')
+    @classmethod
+    def datetime_to_str(cls, v):
+        if isinstance(v, datetime):
+            return v.isoformat()
+        return v
+    
     class Config:
         from_attributes = True
 
@@ -342,6 +357,13 @@ class QuizResponse(BaseModel):
     created_at: str
     updated_at: str
     questions: List[QuizQuestionResponse] = []
+    
+    @field_validator('created_at', 'updated_at', mode='before')
+    @classmethod
+    def datetime_to_str(cls, v):
+        if isinstance(v, datetime):
+            return v.isoformat()
+        return v
     
     class Config:
         from_attributes = True
@@ -386,6 +408,13 @@ class QuizAnswerResponse(BaseModel):
     created_at: str
     updated_at: str
     
+    @field_validator('created_at', 'updated_at', mode='before')
+    @classmethod
+    def datetime_to_str(cls, v):
+        if isinstance(v, datetime):
+            return v.isoformat()
+        return v
+    
     class Config:
         from_attributes = True
 
@@ -407,6 +436,13 @@ class QuizAttemptResponse(BaseModel):
     created_at: str
     updated_at: str
     answers: List[QuizAnswerResponse] = []
+    
+    @field_validator('created_at', 'updated_at', 'started_at', 'completed_at', mode='before')
+    @classmethod
+    def datetime_to_str(cls, v):
+        if isinstance(v, datetime):
+            return v.isoformat()
+        return v
     
     class Config:
         from_attributes = True
