@@ -46,3 +46,43 @@ export function useCreateSessionMutation() {
     },
   });
 }
+
+// Graduation Project Query Hooks
+export function useGraduationQuestionsQuery(sessionId: number) {
+  return useQuery({
+    queryKey: ["roadmap", "graduation-project", sessionId, "questions"],
+    queryFn: () => Session(sessionId).getGraduationQuestions(),
+    enabled: !!sessionId,
+    retry: false, // Don't retry if questions don't exist yet
+    throwOnError: false, // Don't throw errors, handle them gracefully
+  });
+}
+
+export function useGenerateGraduationQuestionsMutation() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (sessionId: number) => Session(sessionId).generateGraduationQuestions(),
+    onSuccess: (_, sessionId) => {
+      // Invalidate and refetch graduation questions for this session
+      queryClient.invalidateQueries({ 
+        queryKey: ["roadmap", "graduation-project", sessionId, "questions"] 
+      });
+    },
+  });
+}
+
+export function useSubmitGraduationAnswersMutation() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ sessionId, answers }: { sessionId: number; answers: Array<{ question_id: string; text: string }> }) =>
+      Session(sessionId).submitGraduationAnswers(answers),
+    onSuccess: (_, { sessionId }) => {
+      // Optionally invalidate related queries after submission
+      queryClient.invalidateQueries({ 
+        queryKey: ["roadmap", "graduation-project", sessionId] 
+      });
+    },
+  });
+}

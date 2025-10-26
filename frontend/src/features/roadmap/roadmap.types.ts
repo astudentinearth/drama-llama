@@ -97,3 +97,64 @@ export interface RoadmapResponse {
     error: null;
 }
 
+// Graduation Project Types
+export interface IGraduationProject {
+    title: string;
+    description: string;
+}
+
+export interface IQuestion {
+    question_id: string;
+    prompt: string;
+    rationale: string;
+    goals_covered: number[];
+    materials_covered: number[];
+    expected_competencies: string[];
+    difficulty: "beginner" | "intermediate" | "advanced";
+    estimated_time_minutes: number;
+    evaluation_rubric: string[];
+    answer_min_chars: number;
+    answer_max_chars: number;
+    requires_material_citations: boolean;
+}
+
+export interface GenerateQuestionsResponse {
+    success: true;
+    data: {
+        graduation_project: IGraduationProject;
+        questions: IQuestion[];
+        graduation_project_db_id: number | null;
+        question_db_ids: number[];
+    };
+    error: null;
+}
+
+export interface GetQuestionsResponse {
+    success: true;
+    data: {
+        graduation_project: IGraduationProject;
+        questions: IQuestion[];
+    };
+    error: null;
+}
+
+export interface IAnswer {
+    question_id: string;
+    text: string;
+}
+
+export interface SubmitAnswersRequest {
+    session_id: number;
+    answers: IAnswer[];
+}
+
+export interface SubmitAnswersResponse {
+    success: true;
+    data: {
+        message: string;
+        score?: number;
+        feedback?: string;
+    };
+    error: null;
+}
+

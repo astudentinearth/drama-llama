@@ -183,4 +183,11 @@ public class RoadmapProxyController {
     public Mono<ResponseEntity<byte[]>> getSubmissions(@PathVariable("sessionId") String sessionId) {
         return proxyGet("/ai/graduation-project/{session_id}/submissions", Map.of("session_id", sessionId));
     }
+
+    @PostMapping("/ai/graduation-project/{sessionId}/submit")
+    public Mono<ResponseEntity<byte[]>> submitGraduationProject(@PathVariable("sessionId") String sessionId,
+                                                                @RequestHeader HttpHeaders headers,
+                                                                @RequestBody(required = false) byte[] body) {
+        return proxyPost("/ai/graduation-project/{session_id}/submit", Map.of("session_id", sessionId), body, headers);
+    }
 }

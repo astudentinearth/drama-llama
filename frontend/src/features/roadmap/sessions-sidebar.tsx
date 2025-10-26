@@ -38,7 +38,7 @@ export default function SessionsSidebar() {
   }
 
   return (
-    <div className="w-64 border rounded-2xl drop-shadow-sm drop-shadow-black/5 bg-card p-2">
+    <div className="w-64 border rounded-2xl drop-shadow-sm overflow-y-auto  drop-shadow-black/5 bg-card p-2">
       <div className="flex items-center justify-between mb-4 px-2 pt-2">
         <div className="flex items-center gap-2">
           <BookOpen className="w-5 h-5" />

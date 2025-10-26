@@ -1,11 +1,16 @@
+import { useState } from "react";
 import { useParams } from "react-router-dom";
 import { useFullSessionQuery } from "./roadmap.query";
+import { Button } from "@/components/ui/button";
+import { GraduationCap } from "lucide-react";
 import CreateSessionDialog from "./create-session-dialog";
 import GoalsDisplay from "./goals-display";
+import GraduationProjectDialog from "./graduation-project-dialog";
 
 export default function SessionDetail() {
   const { sessionId } = useParams<{ sessionId: string }>();
   const sessionIdNum = sessionId ? parseInt(sessionId, 10) : 0;
+  const [graduationDialogOpen, setGraduationDialogOpen] = useState(false);
 
   const {
     data: fullSessionData,
@@ -60,10 +65,24 @@ export default function SessionDetail() {
       <div className="flex-1 p-6 overflow-y-auto">
         <div className="max-w-4xl mx-auto">
           <div className="mb-6">
-            <h1 className="text-3xl font-bold mb-2">{session.session_name}</h1>
-            <p className="text-muted-foreground text-lg">
-              {session.description}
-            </p>
+            <div className="flex items-start justify-between">
+              <div>
+                <h1 className="text-3xl font-bold mb-2">{session.session_name}</h1>
+                <p className="text-muted-foreground text-lg">
+                  {session.description}
+                </p>
+              </div>
+              {session.status !== "completed" && roadmap && (
+                <Button
+                  onClick={() => setGraduationDialogOpen(true)}
+                  className="flex items-center gap-2"
+                  size="lg"
+                >
+                  <GraduationCap className="h-5 w-5" />
+                  Finish Course
+                </Button>
+              )}
+            </div>
           </div>
 
           <div className="bg-card rounded-xl drop-shadow-lg drop-shadow-black/5 p-6 border">
@@ -118,6 +137,12 @@ export default function SessionDetail() {
           </div>
         </div>
       </div>
+
+      <GraduationProjectDialog
+        open={graduationDialogOpen}
+        onOpenChange={setGraduationDialogOpen}
+        sessionId={sessionIdNum}
+      />
     </div>
   );
 }
