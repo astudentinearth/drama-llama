@@ -1,73 +1,107 @@
-# React + TypeScript + Vite
+# Drama Llama Frontend
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+This is the frontend for the Drama Llama project, a web application built with React, Vite, and TypeScript.
 
-Currently, two official plugins are available:
+## Installation
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+To install the project's dependencies, run the following command:
 
-## React Compiler
-
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
-
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
-
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```bash
+bun install
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+## Running the Project
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+To run the project in development mode, run the following command:
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```bash
+bun run dev
 ```
+
+This will start the development server at `http://localhost:5173`.
+
+## Building the Project
+
+To build the project for production, run the following command:
+
+```bash
+bun run build
+```
+
+This will create a `dist` directory with the production-ready files.
+
+## Linting
+
+To lint the project's code, run the following command:
+
+```bash
+bun run lint
+```
+
+## Project Structure
+
+The project's directory structure is as follows:
+
+```
+├───.gitignore
+├───bun.lock
+├───components.json
+├───eslint.config.js
+├───index.html
+├───package.json
+├───README.md
+├───tsconfig.app.json
+├───tsconfig.json
+├───tsconfig.node.json
+├───vite.config.ts
+├───.kiro/
+├───.vscode/
+├───dist/
+├───node_modules/
+├───public/
+└───src/
+    ├───App.tsx
+    ├───index.css
+    ├───main.tsx
+    ├───assets/
+    ├───components/
+    ├───features/
+    └───lib/
+```
+
+## Dependencies
+
+- **@radix-ui/react-dialog**: For creating accessible dialogs.
+- **@radix-ui/react-label**: For creating accessible labels.
+- **@radix-ui/react-progress**: For creating accessible progress bars.
+- **@radix-ui/react-slot**: For creating accessible slots.
+- **@tanstack/react-query**: For data fetching and caching.
+- **axios**: For making HTTP requests.
+- **class-variance-authority**: For creating class variants.
+- **clsx**: For constructing `className` strings conditionally.
+- **lucide-react**: For using Lucide icons.
+- **react**: For building user interfaces.
+- **react-dom**: For rendering React components.
+- **react-markdown**: For rendering Markdown.
+- **react-router-dom**: For routing.
+- **remark-gfm**: For GitHub Flavored Markdown support.
+- **tailwind-merge**: For merging Tailwind CSS classes.
+- **zustand**: For state management.
+
+## Dev Dependencies
+
+- **@eslint/js**: For ESLint.
+- **@tailwindcss/vite**: For using Tailwind CSS with Vite.
+- **@types/node**: For Node.js types.
+- **@types/react**: For React types.
+- **@types/react-dom**: For React DOM types.
+- **@vitejs/plugin-react**: For using React with Vite.
+- **eslint**: For linting.
+- **eslint-plugin-react-hooks**: For ESLint React Hooks plugin.
+- **eslint-plugin-react-refresh**: For ESLint React Refresh plugin.
+- **globals**: For ESLint globals.
+- **tailwindcss**: For Tailwind CSS.
+- **tw-animate-css**: For Tailwind CSS animations.
+- **typescript**: For TypeScript.
+- **typescript-eslint**: For TypeScript ESLint.
+- **vite**: For building and running the project.
