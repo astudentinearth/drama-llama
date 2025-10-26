@@ -1,4 +1,4 @@
-import { use, useEffect, useState } from "react"
+import { useEffect, useState } from "react"
 import { useUserMode } from "@/contexts/user-mode-context"
 
 function Topbar() {
@@ -27,14 +27,15 @@ function Topbar() {
     }, []);
 
     return (
-        <nav className={`w-full  backdrop-blur-3xl transition-all duration-500 shadow ${isScrolled ? 'shadow-xl bg-gray-900' : 'bg-gray-500'}`}>
-            <div className="max-w-5xl h-8 mx-auto flex justify-between items-center py-2 text-white">
-                <ul className="flex space-x-12 text-sm">
+        <nav className={`w-full backdrop-blur-3xl transition-all duration-500 shadow ${isScrolled ? 'shadow-xl bg-gray-900' : 'bg-gray-500'}`}>
+            <div className="max-w-5xl h-auto sm:h-8 mx-auto flex justify-center sm:justify-between items-center py-2 px-4 sm:px-6 text-white">
+                <ul className="flex space-x-6 sm:space-x-8 md:space-x-12 text-xs sm:text-sm">
                     <li
                         onClick={() => setSelected('individual')}
                         className="hover:cursor-pointer relative pb-1"
                     >
-                        For Individual
+                        <span className="hidden sm:inline">For Individual</span>
+                        <span className="sm:hidden">Individual</span>
                         <span
                             className={`absolute bottom-0 left-0 h-0.5 bg-white transition-transform duration-300 ease-out origin-left ${selected === 'individual' ? 'w-full scale-x-100' : 'w-full scale-x-0'
                                 }`}
@@ -44,7 +45,8 @@ function Topbar() {
                         onClick={() => setSelected('business')}
                         className="hover:cursor-pointer relative pb-1"
                     >
-                        For Business
+                        <span className="hidden sm:inline">For Business</span>
+                        <span className="sm:hidden">Business</span>
                         <span
                             className={`absolute bottom-0 left-0 h-0.5 bg-white transition-transform duration-300 ease-out origin-left ${selected === 'business' ? 'w-full scale-x-100' : 'w-full scale-x-0'
                                 }`}

@@ -1,5 +1,3 @@
-import { div } from "framer-motion/client";
-
 type ComparisonRow = {
     platform: string;
     description: string;
@@ -103,13 +101,13 @@ const CrossIcon = () => (
 
 export default function ComparisonTable() {
     return (
-        <section className="w-full mx-auto py-20 overflow-hidden max-w-5xl">
+        <section className="w-full mx-auto py-12 sm:py-16 md:py-20 overflow-hidden max-w-5xl px-4 sm:px-6">
             {/* Header */}
-            <div className="text-center mb-12">
-                <div className="inline-block px-4 py-2 bg-gray-100 rounded-full mb-4">
-                    <span className="text-sm font-medium text-gray-700">Why Choose Us</span>
+            <div className="text-center mb-8 sm:mb-12">
+                <div className="inline-block px-3 sm:px-4 py-1.5 sm:py-2 bg-gray-100 rounded-full mb-3 sm:mb-4">
+                    <span className="text-xs sm:text-sm font-medium text-gray-700">Why Choose Us</span>
                 </div>
-                <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4">
+                <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-gray-900 mb-3 sm:mb-4 px-4">
                     <span className="bg-linear-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">groowy's</span> Alternative?
                     <br />
                     <span className="bg-linear-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">Think</span> One More Time!
@@ -205,27 +203,27 @@ export default function ComparisonTable() {
                             </div>
 
                             {/* Mobile View */}
-                            <div className={`lg:hidden px-6 py-6 rounded-2xl ${row.isHighlighted
+                            <div className={`lg:hidden px-4 sm:px-6 py-4 sm:py-6 rounded-xl sm:rounded-2xl ${row.isHighlighted
                                 ? "bg-linear-to-r from-blue-50 via-purple-50 to-blue-50 border-2 border-blue-200 shadow-lg"
                                 : "bg-gray-900"
                                 }`}>
-                                <div className="flex items-start gap-4 mb-4">
-                                    <div className={`shrink-0 p-3 rounded-xl ${row.isHighlighted ? "bg-white text-gray-900" : "bg-blue-500/10 text-blue-400"
+                                <div className="flex items-start gap-3 sm:gap-4 mb-3 sm:mb-4">
+                                    <div className={`shrink-0 p-2 sm:p-3 rounded-xl ${row.isHighlighted ? "bg-white text-gray-900" : "bg-blue-500/10 text-blue-400"
                                         }`}>
                                         {row.icon}
                                     </div>
-                                    <div>
-                                        <h3 className={`text-lg font-bold mb-1 ${row.isHighlighted ? "text-gray-900" : "text-white"
+                                    <div className="flex-1 min-w-0">
+                                        <h3 className={`text-base sm:text-lg font-bold mb-1 ${row.isHighlighted ? "text-gray-900" : "text-white"
                                             }`}>
                                             {row.platform}
                                         </h3>
-                                        <p className={`text-sm leading-relaxed ${row.isHighlighted ? "text-gray-600" : "text-gray-400"
+                                        <p className={`text-xs sm:text-sm leading-relaxed ${row.isHighlighted ? "text-gray-600" : "text-gray-400"
                                             }`}>
                                             {row.description}
                                         </p>
                                     </div>
                                 </div>
-                                <div className="grid grid-cols-2 gap-3 text-sm">
+                                <div className="grid grid-cols-2 gap-2 sm:gap-3 text-xs sm:text-sm">
                                     <div className="flex items-center justify-between">
                                         <span className={row.isHighlighted ? "text-gray-700 font-medium" : "text-gray-300 font-medium"}>Speed</span>
                                         <div className={row.speed ? "text-green-600" : "text-red-600"}>

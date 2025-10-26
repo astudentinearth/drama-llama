@@ -79,41 +79,41 @@ function PlanCard({ plan }: { plan: Plan }) {
                 containerClassName="h-full"
                 className="h-full"
             >
-                <div className={`h-full rounded-[2rem] bg-gradient-to-br ${plan.gradient} p-8 flex flex-col min-h-[600px]`}>
+                <div className={`h-full rounded-4xl bg-linear-to-br ${plan.gradient} p-6 sm:p-8 flex flex-col min-h-[500px] sm:min-h-[600px]`}>
                     {/* Header */}
-                    <div className="mb-6">
-                        <h3 className="text-2xl font-bold text-gray-900 mb-1">{plan.title}</h3>
-                        <p className="text-sm text-gray-600">{plan.subtitle}</p>
+                    <div className="mb-4 sm:mb-6">
+                        <h3 className="text-xl sm:text-2xl font-bold text-gray-900 mb-1">{plan.title}</h3>
+                        <p className="text-xs sm:text-sm text-gray-600">{plan.subtitle}</p>
                     </div>
 
                     {/* Price */}
-                    <div className="mb-6">
+                    <div className="mb-4 sm:mb-6">
                         <div className="flex items-baseline gap-1">
-                            <span className="text-5xl font-bold text-gray-900">
+                            <span className="text-4xl sm:text-5xl font-bold text-gray-900">
                                 ${typeof plan.price === "number" ? plan.price : "0"}
                             </span>
                             {typeof plan.price === "number" && (
-                                <span className="text-lg text-gray-700">/mo</span>
+                                <span className="text-base sm:text-lg text-gray-700">/mo</span>
                             )}
                         </div>
                         {typeof plan.price === "number" && (
-                            <p className="text-sm text-gray-600 mt-1">Cancel or pause any time</p>
+                            <p className="text-xs sm:text-sm text-gray-600 mt-1">Cancel or pause any time</p>
                         )}
                     </div>
 
                     {/* CTA Button */}
-                    <a href="/app" className="w-full block mb-8">
-                        <button className="w-full bg-gray-900 hover:bg-gray-800 text-white font-semibold py-4 px-6 rounded-2xl transition-all cursor-pointer hover:shadow-2xl">
+                    <a href="/app" className="w-full block mb-6 sm:mb-8">
+                        <button className="w-full bg-gray-900 hover:bg-gray-800 text-white font-semibold py-3 sm:py-4 px-6 rounded-2xl transition-all cursor-pointer hover:shadow-2xl text-sm sm:text-base">
                             Get started
                         </button>
                     </a>
 
                     {/* Features */}
-                    <div className="space-y-4 flex-grow">
+                    <div className="space-y-3 sm:space-y-4 grow">
                         {plan.features.map((feature, idx) => (
                             <div key={idx} className="flex gap-3 items-start">
-                                <Check className="w-5 h-5 text-gray-900 flex-shrink-0 mt-0.5" strokeWidth={3} />
-                                <span className="text-sm text-gray-900 leading-relaxed">{feature}</span>
+                                <Check className="w-4 h-4 sm:w-5 sm:h-5 text-gray-900 shrink-0 mt-0.5" strokeWidth={3} />
+                                <span className="text-xs sm:text-sm text-gray-900 leading-relaxed">{feature}</span>
                             </div>
                         ))}
                     </div>
@@ -133,13 +133,13 @@ export default function PlansSection() {
             : [PLANS.starter, PLANS.enterprise];
 
     return (
-        <section className="max-w-6xl mx-auto px-6 py-12">
-            <div className="flex flex-col items-center mb-12">
-                <h2 className="text-4xl font-bold text-gray-900">Choose a plan</h2>
-                <p className="text-lg text-gray-600 mt-3">Recommended plans for {userMode}</p>
+        <section className="max-w-6xl mx-auto px-4 sm:px-6 py-8 sm:py-12">
+            <div className="flex flex-col items-center mb-8 sm:mb-12">
+                <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 text-center">Choose a plan</h2>
+                <p className="text-base sm:text-lg text-gray-600 mt-2 sm:mt-3 text-center">Recommended plans for {userMode}</p>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto items-stretch">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-8 max-w-4xl mx-auto items-stretch">
                 {visiblePlans.map((p) => (
                     <PlanCard key={p.id} plan={p} />
                 ))}

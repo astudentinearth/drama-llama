@@ -83,22 +83,22 @@ export default function RoadmapCTA() {
     const people = userMode === "individual" ? individuals : companies;
 
     return (
-        <div className="w-full bg-black rounded-3xl shadow-2xl overflow-hidden">
-            <div className="flex flex-row items-center justify-between gap-6 px-8 py-6">
+        <div className="w-full bg-black rounded-2xl sm:rounded-3xl shadow-2xl overflow-hidden">
+            <div className="flex flex-col lg:flex-row items-center justify-between gap-6 px-4 sm:px-6 md:px-8 py-6 sm:py-8">
                 {/* Left Section */}
-                <div className="shrink-0 space-y-4 max-w-[280px]">
+                <div className="shrink-0 space-y-3 sm:space-y-4 max-w-full lg:max-w-[280px] text-center lg:text-left">
                     {userMode === "individual" ? (
-                        <h2 className="text-3xl font-bold text-white leading-tight">
+                        <h2 className="text-2xl sm:text-3xl font-bold text-white leading-tight">
                             Get <span className="text-blue-400">your Roadmap</span>
                             <br />
                             <span className="text-blue-400">Today!</span>
                         </h2>
                     ) : (
-                        <h2 className="text-3xl font-bold text-white leading-tight">
+                        <h2 className="text-2xl sm:text-3xl font-bold text-white leading-tight">
                             Discover the <span className="text-blue-400">Talent Pool</span>
                         </h2>
                     )}
-                    <a href="/app">
+                    <a href="/app" className="inline-block">
                         <button className="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-lg border-2 border-blue-500 transition-all duration-300">
                             Get started
                         </button>
@@ -106,12 +106,12 @@ export default function RoadmapCTA() {
                 </div>
 
                 {/* Center Section - Graph */}
-                <div className="shrink-0">
-                    <div className="relative w-[320px] h-80 bg-gray-300 rounded-xl p-6">
+                <div className="shrink-0 hidden md:block">
+                    <div className="relative w-[280px] lg:w-[320px] h-64 lg:h-80 bg-gray-300 rounded-xl p-6">
                         {/* Grid pattern */}
                         <div className="absolute inset-6 grid grid-cols-4 grid-rows-4 gap-0">
                             {Array.from({ length: 16 }).map((_, i) => (
-                                <div key={i} className="border-r border-b border-gray-400/30 last:border-r-0 [&:nth-child(4n)]:border-r-0" />
+                                <div key={i} className="border-r border-b border-gray-400/30 last:border-r-0 nth-[4n]:border-r-0" />
                             ))}
                         </div>
 
@@ -121,21 +121,21 @@ export default function RoadmapCTA() {
                 </div>
 
                 {/* Right Section */}
-                <div className="shrink-0 space-y-4 max-w-[280px]">
+                <div className="shrink-0 space-y-3 sm:space-y-4 max-w-full lg:max-w-[280px] text-center lg:text-left">
                     {userMode === "individual" ? (
-                        <p className="text-base text-white leading-relaxed">
+                        <p className="text-sm sm:text-base text-white leading-relaxed">
                             Our users have already learn with their personalized roadmap.{" "}
                             <span className="text-blue-400 font-semibold">Try it too!</span>
                         </p>
                     ) : (
-                        <p className="text-base text-white leading-relaxed">
+                        <p className="text-sm sm:text-base text-white leading-relaxed">
                             Our partners have already started grow their businesses.{" "}
                             <span className="text-blue-400 font-semibold">Join us!</span>
                         </p>
                     )}
 
                     {/* Avatar stack with AnimatedTooltip */}
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center justify-center lg:justify-start gap-2">
                         <AnimatedTooltip items={people} />
                         <div className="w-10 h-10 rounded-full bg-white border-2 border-black flex items-center justify-center">
                             <span className="text-xs font-bold text-black">+2m</span>
