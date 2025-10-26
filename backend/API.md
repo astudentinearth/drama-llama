@@ -1,6 +1,98 @@
 # API Documentation
 
-This document provides documentation for the backend API of the Drama Llama application.
+This document provides documentation for the backend API of the GrowthWay application.
+
+## Authentication API
+
+### POST /api/auth/register
+
+Registers a new user account.
+
+**Request Body**
+
+```json
+{
+  "username": "johndoe",
+  "email": "john@example.com",
+  "password": "securepassword123",
+  "recruiter": false
+}
+```
+
+**JavaScript Type Definitions**
+
+```javascript
+/**
+ * @typedef {object} RegisterRequest
+ * @property {string} username
+ * @property {string} email
+ * @property {string} password
+ * @property {boolean} recruiter
+ */
+```
+
+**Response (200 OK)**
+
+```json
+{
+  "id": "b2c3d4e5-f6a7-8901-2345-67890abcdef1",
+  "username": "johndoe",
+  "email": "john@example.com",
+  "roles": ["MEMBER"]
+}
+```
+
+**JavaScript Type Definitions**
+
+```javascript
+/**
+ * @typedef {object} User
+ * @property {string} id
+ * @property {string} username
+ * @property {string} email
+ * @property {string[]} roles
+ */
+```
+
+### POST /api/auth/login
+
+Authenticates a user and creates a session.
+
+**Request Body**
+
+```json
+{
+  "username": "johndoe",
+  "password": "securepassword123"
+}
+```
+
+**Response (200 OK)**
+
+Returns HTTP 200 on successful authentication. The session is managed via cookies.
+
+### POST /api/auth/logout
+
+Logs out the current user and destroys the session.
+
+**Response (200 OK)**
+
+Returns HTTP 200 on successful logout.
+
+### GET /api/auth/me
+
+Retrieves information about the currently authenticated user.
+
+**Response (200 OK)**
+
+```json
+{
+  "id": "b2c3d4e5-f6a7-8901-2345-67890abcdef1",
+  "username": "johndoe",
+  "email": "john@example.com",
+  "roles": ["MEMBER"]
+}
+```
 
 ## Jobs API
 
@@ -263,16 +355,112 @@ Counts the number of applications for a specific job.
 
 ## Company API
 
-### POST /api/company
+### GET /api/company/{id}
 
-Creates a new company.
+Retrieves a specific company by its ID.
+
+**Request**
+
+*   **Path Parameters**
+    *   `id` (string): The UUID of the company.
 
 **Response (200 OK)**
 
-The response is a string representing the newly created company's ID.
-
+```json
+{
+  "id": "f6a7b8c9-d0e1-2345-6789-0abcdef12345",
+  "name": "Tech Corp",
+  "description": "A leading technology company"
+}
 ```
-"f6a7b8c9-d0e1-2345-6789-0abcdef12345"
+
+**JavaScript Type Definitions**
+
+```javascript
+/**
+ * @typedef {object} Company
+ * @property {string} id
+ * @property {string} name
+ * @property {string} description
+ */
+```
+
+### GET /api/company/{id}/jobs
+
+Retrieves all job listings for a specific company.
+
+**Request**
+
+*   **Path Parameters**
+    *   `id` (string): The UUID of the company.
+
+**Response (200 OK)**
+
+```json
+{
+  "jobs": [
+    {
+      "id": "a1b2c3d4-e5f6-7890-1234-567890abcdef",
+      "title": "Software Engineer",
+      "content": "We are looking for a skilled software engineer to join our team.",
+      "tags": ["Java", "Spring", "React"],
+      "userId": "b2c3d4e5-f6a7-8901-2345-67890abcdef1",
+      "active": true
+    }
+  ]
+}
+```
+
+### GET /api/company/my
+
+Retrieves the current user's company. Requires RECRUITER role.
+
+**Response (200 OK)**
+
+```json
+{
+  "id": "f6a7b8c9-d0e1-2345-6789-0abcdef12345",
+  "name": "My Company",
+  "description": "My company description"
+}
+```
+
+### PATCH /api/company/{id}
+
+Updates an existing company. Requires RECRUITER role.
+
+**Request**
+
+*   **Path Parameters**
+    *   `id` (string): The UUID of the company.
+
+*   **Request Body**
+
+    ```json
+    {
+      "name": "Updated Company Name",
+      "description": "Updated company description"
+    }
+    ```
+
+**JavaScript Type Definitions**
+
+```javascript
+/**
+ * @typedef {object} UpdateCompany
+ * @property {string} name
+ * @property {string} description
+ */
+```
+
+**Response (200 OK)**
+
+```json
+{
+  "id": "f6a7b8c9-d0e1-2345-6789-0abcdef12345",
+  "name": "Updated Company Name",
+  "description": "Updated company description"
+}
 ```
 
 ## User Profile API
@@ -399,6 +587,392 @@ Retrieves a list of CVs for a specific user.
  * @property {Cv[]} cvs
  */
 ```
+
+### POST /api/profile/{userId}/ai/sessions/{sessionId}/summarize-cv
+
+Summarizes a CV for a specific user and session.
+
+**Request**
+
+*   **Path Parameters**
+    *   `userId` (string): The UUID of the user.
+    *   `sessionId` (string): The session ID.
+
+*   **Request Body**
+
+    ```json
+    {
+      "cvUrl": "https://example.com/cv.pdf"
+    }
+    ```
+
+**JavaScript Type Definitions**
+
+```javascript
+/**
+ * @typedef {object} SummarizeCvRequest
+ * @property {string} cvUrl
+ */
+```
+
+**Response (200 OK)**
+
+Returns a summary of the CV content.
+
+## Roadmap API
+
+The Roadmap API provides endpoints for managing learning sessions, AI interactions, quizzes, and graduation projects. All endpoints proxy requests to the AI service.
+
+### Session Management
+
+### GET /api/roadmap/sessions
+
+Retrieves all sessions for the current authenticated user.
+
+**Response (200 OK)**
+
+Returns a list of user sessions.
+
+### GET /api/roadmap/sessions/{sessionId}
+
+Retrieves a specific session by its ID.
+
+**Request**
+
+*   **Path Parameters**
+    *   `sessionId` (string): The session ID.
+
+**Response (200 OK)**
+
+Returns session details.
+
+### GET /api/roadmap/sessions/user/{userId}
+
+Retrieves all sessions for a specific user.
+
+**Request**
+
+*   **Path Parameters**
+    *   `userId` (string): The UUID of the user.
+
+**Response (200 OK)**
+
+Returns a list of sessions for the specified user.
+
+### GET /api/roadmap/sessions/{sessionId}/full
+
+Retrieves complete session information including all details.
+
+**Request**
+
+*   **Path Parameters**
+    *   `sessionId` (string): The session ID.
+
+**Response (200 OK)**
+
+Returns full session details.
+
+### GET /api/roadmap/sessions/{sessionId}/progress
+
+Retrieves the progress information for a specific session.
+
+**Request**
+
+*   **Path Parameters**
+    *   `sessionId` (string): The session ID.
+
+**Response (200 OK)**
+
+Returns session progress data.
+
+### GET /api/roadmap/sessions/user/{userId}/stats
+
+Retrieves statistics for a specific user.
+
+**Request**
+
+*   **Path Parameters**
+    *   `userId` (string): The UUID of the user.
+
+**Response (200 OK)**
+
+Returns user statistics.
+
+### POST /api/roadmap/sessions
+
+Creates a new learning session.
+
+**Request Body**
+
+```json
+{
+  "status": "active",
+  "user_id": "b2c3d4e5-f6a7-8901-2345-67890abcdef1"
+}
+```
+
+**JavaScript Type Definitions**
+
+```javascript
+/**
+ * @typedef {object} CreateSession
+ * @property {string} status
+ * @property {string} user_id
+ */
+```
+
+**Response (200 OK)**
+
+Returns the created session.
+
+### POST /api/roadmap/sessions/complete
+
+Marks a session as completed.
+
+**Request**
+
+*   **Query Parameters**
+    *   `sessionId` (number): The session ID.
+
+**Response (200 OK)**
+
+Returns completion confirmation.
+
+### POST /api/roadmap/sessions/archive
+
+Archives a session.
+
+**Request**
+
+*   **Query Parameters**
+    *   `sessionId` (number): The session ID.
+
+**Response (200 OK)**
+
+Returns archive confirmation.
+
+### Message Management
+
+### GET /api/roadmap/sessions/{sessionId}/messages
+
+Retrieves all messages for a specific session.
+
+**Request**
+
+*   **Path Parameters**
+    *   `sessionId` (string): The session ID.
+
+**Response (200 OK)**
+
+Returns session messages.
+
+### GET /api/roadmap/sessions/{sessionId}/messages/recent
+
+Retrieves recent messages for a specific session.
+
+**Request**
+
+*   **Path Parameters**
+    *   `sessionId` (string): The session ID.
+
+**Response (200 OK)**
+
+Returns recent session messages.
+
+### GET /api/roadmap/sessions/{sessionId}/messages/count
+
+Retrieves the count of messages for a specific session.
+
+**Request**
+
+*   **Path Parameters**
+    *   `sessionId` (string): The session ID.
+
+**Response (200 OK)**
+
+Returns message count.
+
+### AI Chat
+
+### POST /api/roadmap/ai/sessions/{sessionId}/chat
+
+Sends a chat message to the AI and receives a streaming response.
+
+**Request**
+
+*   **Path Parameters**
+    *   `sessionId` (string): The session ID.
+
+*   **Request Body**
+
+    ```json
+    {
+      "message": "Hello, I need help with learning JavaScript"
+    }
+    ```
+
+**JavaScript Type Definitions**
+
+```javascript
+/**
+ * @typedef {object} ChatMessage
+ * @property {string} message
+ */
+```
+
+**Response (200 OK)**
+
+Returns a Server-Sent Events (SSE) stream with AI responses.
+
+### Roadmap Management
+
+### GET /api/roadmap/ai/sessions/{sessionId}/roadmap
+
+Retrieves the roadmap for a specific session.
+
+**Request**
+
+*   **Path Parameters**
+    *   `sessionId` (string): The session ID.
+
+**Response (200 OK)**
+
+Returns session roadmap data.
+
+### Quiz Management
+
+### POST /api/roadmap/ai/sessions/{sessionId}/quizzes
+
+Creates a new quiz for a session.
+
+**Request**
+
+*   **Path Parameters**
+    *   `sessionId` (string): The session ID.
+
+*   **Request Body**
+
+    ```json
+    {
+      "topic": "JavaScript Basics",
+      "difficulty": "beginner"
+    }
+    ```
+
+**JavaScript Type Definitions**
+
+```javascript
+/**
+ * @typedef {object} CreateQuiz
+ * @property {string} topic
+ * @property {string} difficulty
+ */
+```
+
+**Response (200 OK)**
+
+Returns the created quiz.
+
+### POST /api/roadmap/ai/sessions/{sessionId}/quizzes/{quizId}/attempts
+
+Creates a quiz attempt for a specific quiz.
+
+**Request**
+
+*   **Path Parameters**
+    *   `sessionId` (string): The session ID.
+    *   `quizId` (number): The quiz ID.
+
+*   **Request Body**
+
+    ```json
+    {
+      "user_id": "b2c3d4e5-f6a7-8901-2345-67890abcdef1",
+      "quiz_id": 123
+    }
+    ```
+
+**JavaScript Type Definitions**
+
+```javascript
+/**
+ * @typedef {object} CreateQuizAttempt
+ * @property {string} user_id
+ * @property {number} quiz_id
+ */
+```
+
+**Response (200 OK)**
+
+Returns the quiz attempt.
+
+### POST /api/roadmap/ai/sessions/{sessionId}/quiz-attempts/{attemptId}/submit
+
+Submits a quiz attempt for grading.
+
+**Request**
+
+*   **Path Parameters**
+    *   `sessionId` (string): The session ID.
+    *   `attemptId` (number): The attempt ID.
+
+**Response (200 OK)**
+
+Returns quiz results.
+
+### Graduation Project Management
+
+### POST /api/roadmap/ai/graduation-project/{sessionId}/generate-questions
+
+Generates questions for a graduation project.
+
+**Request**
+
+*   **Path Parameters**
+    *   `sessionId` (string): The session ID.
+
+**Response (200 OK)**
+
+Returns generated questions.
+
+### GET /api/roadmap/ai/graduation-project/{sessionId}/questions
+
+Retrieves questions for a graduation project.
+
+**Request**
+
+*   **Path Parameters**
+    *   `sessionId` (string): The session ID.
+
+**Response (200 OK)**
+
+Returns graduation project questions.
+
+### GET /api/roadmap/ai/graduation-project/{sessionId}/submissions
+
+Retrieves submissions for a graduation project.
+
+**Request**
+
+*   **Path Parameters**
+    *   `sessionId` (string): The session ID.
+
+**Response (200 OK)**
+
+Returns graduation project submissions.
+
+### POST /api/roadmap/ai/graduation-project/{sessionId}/submit
+
+Submits a graduation project.
+
+**Request**
+
+*   **Path Parameters**
+    *   `sessionId` (string): The session ID.
+
+**Response (200 OK)**
+
+Returns submission confirmation.
 
 ## Upload API
 
