@@ -1,5 +1,6 @@
 import Topbar from "./components/topbar"
 import LogoMarquee from "./components/logo-marquee"
+import PlansSection from "./components/plans-section"
 import { PointerHighlight } from "@/components/ui/pointer-highlight";
 import { HoverBorderGradient } from "./components/ui/hover-border-gradient"
 import { TypewriterEffectSmooth } from "./components/ui/typewriter-effect"
@@ -52,7 +53,8 @@ function App() {
         </div>
         <LogoMarquee />
       </AnimatedSection>
-      <motion.section className="max-w-5xl mx-auto flex flex-col items-center h-screen space-y-16 pb-24 container">
+      <PlansSection />
+      <motion.section className="max-w-5xl mx-auto flex flex-col items-center min-h-screen space-y-16 pb-24 container">
         <AnimatedElement delay={0.1} scale>
           <h1 className="text-5xl">Smart Careers, Supercharged by <PointerHighlight containerClassName="inline-block mx-1">AI</PointerHighlight></h1>
         </AnimatedElement>
@@ -60,6 +62,7 @@ function App() {
           <img src="/chart.png" alt="" className="max-w-5xl mx-auto" />
         </AnimatedElement>
       </motion.section>
+      <PlansSection />
     </div>
   )
 }
