@@ -28,7 +28,7 @@ function Topbar() {
 
     return (
         <nav className={`w-full  backdrop-blur-3xl transition-all duration-500 shadow ${isScrolled ? 'shadow-xl bg-gray-900' : 'bg-gray-500'}`}>
-            <div className="max-w-3xl h-8 mx-auto flex justify-between items-center py-2 text-white">
+            <div className="max-w-5xl h-8 mx-auto flex justify-between items-center py-2 text-white">
                 <ul className="flex space-x-12 text-sm">
                     <li
                         onClick={() => setSelected('individual')}
