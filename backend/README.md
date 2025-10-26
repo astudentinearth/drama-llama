@@ -1,6 +1,6 @@
 # Backend Service
 
-The backend service for the GrowthWay application, built with Spring Boot and Java.
+The backend service for the Groowy application, built with Spring Boot and Java.
 
 ## Overview
 

@@ -1,6 +1,6 @@
 # API Documentation
 
-This document provides documentation for the backend API of the GrowthWay application.
+This document provides documentation for the backend API of the Groowy application.
 
 ## Authentication API
 

@@ -35,7 +35,7 @@ A Node.js-based CDN service for handling file uploads and downloads with MinIO/S
 
 ```bash
 # Clone and install dependencies
-git clone <repository-url>
+git clone https://github.com/astudentinearth/drama-llama.git
 cd cdn
 npm install
 

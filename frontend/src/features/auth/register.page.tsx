@@ -27,7 +27,7 @@ export default function RegisterPage() {
   return (
     <Card className="w-96 page-transition h-fit p-4 px-6 pb-6 gap-4 absolute left-1/2 -translate-x-1/2 top-1/2 -translate-y-1/2">
       <span className="flex w-full text-center justify-center font-extrabold text-brand text-4xl">
-        GrowthWay
+        Groowy
       </span>
       <div />
       <h1 className="text-2xl">Create account</h1>

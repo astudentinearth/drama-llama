@@ -1,73 +1,163 @@
-# React + TypeScript + Vite
+# Groowy Landing Page
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+A modern, animated landing page for Groowy - an AI-powered career growth platform that connects skills with their future opportunities.
 
-Currently, two official plugins are available:
+## 🚀 Project Overview
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+Groowy is a comprehensive platform that provides personalized growth paths and smarter hiring solutions. This landing page serves as the marketing frontend, showcasing the platform's capabilities and encouraging user sign-ups.
 
-## React Compiler
+### Key Features
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+- **AI-Powered Career Growth**: Personalized skill development paths
+- **Smart Hiring Solutions**: Connect talented individuals with opportunities
+- **Company Integration**: Tools for organizations to find and nurture talent
+- **Individual Development**: Personal career roadmap creation and tracking
 
-## Expanding the ESLint configuration
+## 🎨 Landing Page Sections
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+### Hero Section
+- Animated typewriter effect with tagline: "Where skills meet their future"
+- Call-to-action buttons for individual and company sign-ups
+- Modern gradient backgrounds and hover effects
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+### Client Showcase
+- Animated logo marquee featuring partner companies
+- Includes Meta, Ollama, and YTU Startup logos
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+### AI-Powered Features
+- Interactive chart visualization
+- Highlighted AI capabilities with pointer effects
+- Motion animations for engagement
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+### Pricing Plans
+- Multiple subscription tiers (Free, Starter, Premium, Enterprise)
+- Visual plan comparison with feature highlights
+- Responsive design for all screen sizes
+
+### Comparison Table
+- Detailed feature comparison across plans
+- Interactive elements for better user experience
+
+### Call-to-Action
+- Roadmap creation invitation
+- Integrated with main application flow
+
+## 🛠️ Tech Stack
+
+- **React 19** - Latest React with modern features
+- **TypeScript** - Type-safe development
+- **Vite** - Fast build tool and dev server
+- **Tailwind CSS** - Utility-first CSS framework
+- **Framer Motion** - Smooth animations and transitions
+- **Lucide React** - Beautiful icon library
+- **React Fast Marquee** - Smooth scrolling animations
+
+## 📦 Installation & Setup
+
+### Prerequisites
+- Node.js (v18 or higher)
+- npm or yarn package manager
+
+### Installation Steps
+
+1. **Clone the repository**
+   ```bash
+   git clone https://github.com/astudentinearth/drama-llama.git
+   cd drama-llama/growthway-landing
+   ```
+
+2. **Install dependencies**
+   ```bash
+   npm install
+   # or
+   yarn install
+   ```
+
+3. **Start development server**
+   ```bash
+   npm run dev
+   # or
+   yarn dev
+   ```
+
+4. **Open in browser**
+   Navigate to `http://localhost:5173`
+
+## 🏗️ Build & Deployment
+
+### Development Build
+```bash
+npm run build
+# or
+yarn build
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
-
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
-
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+### Preview Production Build
+```bash
+npm run preview
+# or
+yarn preview
 ```
+
+### Deployment Options
+- **Static Hosting**: Deploy `dist/` folder to Vercel, Netlify, or GitHub Pages
+- **CDN**: Upload to AWS S3, CloudFront, or similar CDN service
+- **Docker**: Containerize for container orchestration platforms
+
+## 📁 Project Structure
+
+```
+growthway-landing/
+├── public/                 # Static assets
+│   ├── logo.png           # Main Groowy logo
+│   ├── chart.png          # AI features visualization
+│   ├── graph.png          # Additional graphics
+│   └── logos/             # Partner company logos
+├── src/
+│   ├── components/        # Reusable UI components
+│   │   ├── ui/           # Base UI components
+│   │   ├── topbar.tsx    # Navigation top bar
+│   │   ├── footer.tsx    # Page footer
+│   │   ├── plans-section.tsx    # Pricing plans
+│   │   └── comparison-table.tsx # Feature comparison
+│   ├── contexts/         # React contexts
+│   ├── lib/              # Utility functions
+│   └── App.tsx           # Main application component
+├── package.json          # Dependencies and scripts
+└── vite.config.ts        # Vite configuration
+```
+
+## 🔗 Integration with Main Application
+
+The landing page integrates with the main Groowy application through:
+
+- **Authentication Flow**: Sign-up buttons redirect to `/app` for user registration
+- **Company Onboarding**: Company sign-up flow connects to backend services
+- **API Integration**: Connects to backend services for user management
+- **Shared Assets**: Uses consistent branding and design system
+
+## 🚀 Getting Started
+
+1. **Development**: Run `npm run dev` to start the development server
+2. **Customization**: Modify components in `src/components/` to update content
+3. **Styling**: Use Tailwind classes or modify `src/index.css` for global styles
+4. **Assets**: Replace images in `public/` directory with your own branding
+
+## 📝 Scripts
+
+- `npm run dev` - Start development server
+- `npm run build` - Build for production
+- `npm run preview` - Preview production build
+- `npm run lint` - Run ESLint for code quality
+
+## 🤝 Contributing
+
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Test thoroughly
+5. Submit a pull request
+
+## 📄 License
+
+This project is part of the Groowy platform. See the main project repository for licensing information.
