@@ -86,3 +86,52 @@ export function useSubmitGraduationAnswersMutation() {
     },
   });
 }
+
+// Quiz Query Hooks
+export function useCreateQuizMutation() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ sessionId, request }: { sessionId: number; request: { goal_id: number; time_limit_minutes: number; passing_score_percentage: number; max_attempts: number } }) =>
+      Session(sessionId).createQuiz(request),
+    onSuccess: (_, { sessionId }) => {
+      // Invalidate related queries after quiz creation
+      queryClient.invalidateQueries({ 
+        queryKey: ["roadmap", "session", sessionId] 
+      });
+    },
+  });
+}
+
+export function useCreateQuizAttemptMutation() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ sessionId, request }: { sessionId: number; request: { quiz_id: number } }) =>
+      Session(sessionId).createQuizAttempt(request),
+    onSuccess: (_, { sessionId }) => {
+      // Invalidate quiz attempts after creating new attempt
+      queryClient.invalidateQueries({ 
+        queryKey: ["roadmap", "quiz-attempts", sessionId] 
+      });
+    },
+  });
+}
+
+export function useSubmitQuizAttemptMutation() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ sessionId, request }: { sessionId: number; request: { attempt_id: number; answers: Array<{ question_id: number; selected_answer: string; time_spent_seconds: number }> } }) =>
+      Session(sessionId).submitQuizAttempt(request),
+    onSuccess: (_, { sessionId }) => {
+      // Invalidate quiz attempts and session data after submission
+      queryClient.invalidateQueries({ 
+        queryKey: ["roadmap", "quiz-attempts", sessionId] 
+      });
+      queryClient.invalidateQueries({ 
+        queryKey: ["roadmap", "session", sessionId] 
+      });
+    },
+  });
+}

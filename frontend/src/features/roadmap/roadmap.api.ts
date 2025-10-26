@@ -1,5 +1,9 @@
 import axios from "axios";
 import type {
+  CreateQuizRequest,
+  CreateQuizResponse,
+  CreateQuizAttemptRequest,
+  CreateQuizAttemptResponse,
   FullSessionResponse,
   GenerateQuestionsResponse,
   GetQuestionsResponse,
@@ -9,6 +13,8 @@ import type {
   SessionProgress,
   SubmitAnswersRequest,
   SubmitAnswersResponse,
+  SubmitQuizRequest,
+  SubmitQuizResponse,
 } from "./roadmap.types";
 
 const ROADMAP_BASEURL = "/api/roadmap";
@@ -119,7 +125,6 @@ export function Session(id: number) {
     const result = await axios.post(
       `${ROADMAP_BASEURL}/ai/graduation-project/${id}/generate-questions`
     );
-    console.log(result.data);
     return result.data as GenerateQuestionsResponse;
   }
 
@@ -127,7 +132,6 @@ export function Session(id: number) {
     const result = await axios.get(
       `${ROADMAP_BASEURL}/ai/graduation-project/${id}/questions`
     );
-    console.log("get grad", result.data);
     return result.data as GetQuestionsResponse;
   }
 
@@ -144,6 +148,31 @@ export function Session(id: number) {
     return result.data as SubmitAnswersResponse;
   }
 
+  // Quiz API functions
+  async function createQuiz(request: CreateQuizRequest) {
+    const result = await axios.post(
+      `${ROADMAP_BASEURL}/ai/sessions/${id}/quizzes`,
+      request
+    );
+    return result.data as CreateQuizResponse;
+  }
+
+  async function createQuizAttempt(request: CreateQuizAttemptRequest) {
+    const result = await axios.post(
+      `${ROADMAP_BASEURL}/ai/sessions/${id}/quizzes/${request.quiz_id}/attempts`,
+      request
+    );
+    return result.data as CreateQuizAttemptResponse;
+  }
+
+  async function submitQuizAttempt(request: SubmitQuizRequest) {
+    const result = await axios.post(
+      `${ROADMAP_BASEURL}/ai/sessions/${id}/quiz-attempts/${request.attempt_id}/submit`,
+      request
+    );
+    return result.data as SubmitQuizResponse;
+  }
+
   return {
     get,
     getFull,
@@ -157,6 +186,9 @@ export function Session(id: number) {
     generateGraduationQuestions,
     getGraduationQuestions,
     submitGraduationAnswers,
+    createQuiz,
+    createQuizAttempt,
+    submitQuizAttempt,
   };
 }
 

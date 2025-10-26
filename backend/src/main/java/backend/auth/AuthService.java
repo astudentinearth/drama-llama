@@ -6,6 +6,8 @@ import backend.auth.exception.UsernameInUseException;
 import backend.auth.user.UserRole;
 import backend.company.Company;
 import backend.company.CompanyRepository;
+import backend.profile.entity.UserProfile;
+import backend.profile.repository.UserProfileRepository;
 import lombok.AllArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -21,6 +23,7 @@ public class AuthService {
     private PasswordEncoder passwordEncoder;
     private AuthContext authContext;
     private CompanyRepository companyRepository;
+    private UserProfileRepository userProfileRepository;
 
     @Transactional
     public User register(RegisterRequestDTO dto) {
@@ -37,6 +40,14 @@ public class AuthService {
         else user.setRoles(Set.of(UserRole.MEMBER));
 
         User saved = userRepository.save(user);
+
+        // Create initial user profile for all users
+        UserProfile profile = UserProfile.builder()
+                .user(saved)
+                .fullName(saved.getUsername())
+                .jobTitle("Groowing")
+                .build();
+        userProfileRepository.save(profile);
 
         if (dto.isRecruiter()) {
             Company company = Company.builder()

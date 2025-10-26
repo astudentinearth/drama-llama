@@ -168,3 +168,90 @@ export interface SubmitAnswersResponse {
     error: null;
 }
 
+// Quiz Types
+export interface IQuizQuestion {
+    id: number;
+    quiz_id: number;
+    question_text: string;
+    question_order: number;
+    options: string[];
+    correct_answer: string;
+    explanation: string;
+    points: number;
+    created_at: string;
+    updated_at: string;
+}
+
+export interface IQuiz {
+    id: number;
+    goal_id: number;
+    title: string;
+    description: string;
+    time_limit_minutes: number;
+    passing_score_percentage: number;
+    max_attempts: number;
+    is_active: boolean;
+    total_questions: number;
+    created_at: string;
+    updated_at: string;
+    questions: IQuizQuestion[];
+}
+
+export interface CreateQuizRequest {
+    goal_id: number;
+    time_limit_minutes: number;
+    passing_score_percentage: number;
+    max_attempts: number;
+}
+
+export interface CreateQuizResponse {
+    success: true;
+    data: IQuiz;
+    error: null;
+}
+
+export interface IQuizAnswer {
+    question_id: number;
+    selected_answer: string;
+    time_spent_seconds: number;
+}
+
+export interface IQuizAttempt {
+    id: number;
+    quiz_id: number;
+    user_id: string;
+    attempt_number: number;
+    started_at: string;
+    completed_at: string | null;
+    total_questions: number;
+    correct_answers: number;
+    score_percentage: number;
+    passed: boolean;
+    time_spent_minutes: number;
+    status: "in_progress" | "completed" | "abandoned";
+    created_at: string;
+    updated_at: string;
+    answers: IQuizAnswer[];
+}
+
+export interface CreateQuizAttemptRequest {
+    quiz_id: number;
+}
+
+export interface CreateQuizAttemptResponse {
+    success: true;
+    data: IQuizAttempt;
+    error: null;
+}
+
+export interface SubmitQuizRequest {
+    attempt_id: number;
+    answers: IQuizAnswer[];
+}
+
+export interface SubmitQuizResponse {
+    success: true;
+    data: IQuizAttempt;
+    error: null;
+}
+

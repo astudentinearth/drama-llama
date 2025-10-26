@@ -133,7 +133,7 @@ export default function SessionDetail() {
               </div>
             )}
 
-            <GoalsDisplay goals={goals} />
+            <GoalsDisplay goals={goals} sessionId={sessionIdNum} />
           </div>
         </div>
       </div>

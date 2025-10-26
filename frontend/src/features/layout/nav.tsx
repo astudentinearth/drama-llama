@@ -20,14 +20,15 @@ export default function Nav() {
       <div className="w-5"></div>
       <NavLink to="/roadmaps">Roadmaps</NavLink>
       <NavLink to="/jobs">Jobs</NavLink>
-      <NavLink to="/profile">Profile</NavLink>
       {user?.roles.includes("RECRUITER") && (
         <NavLink to={"/company/" + myCompany.data?.id}>My company</NavLink>
       )}
       <div className="flex-1"></div>
       {user && (
         <>
-          <span className="flex items-center gap-2"><UserRound /> {user.username}</span>
+          <span className="flex items-center gap-2">
+            <UserRound /> {user.username}
+          </span>
           &nbsp;
           <Button
             onClick={() => logoutMutation.mutate()}

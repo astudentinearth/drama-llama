@@ -1,14 +1,25 @@
+import { useState } from "react";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import MaterialsDialog from "./materials-dialog";
-import { Target, Clock, CheckCircle, Circle } from "lucide-react";
+import QuizDialog from "./quiz-dialog";
+import { Target, Clock, CheckCircle, Circle, Brain } from "lucide-react";
 import type { IGoal } from "./roadmap.types";
 
 interface GoalsDisplayProps {
   goals: IGoal[];
+  sessionId: number;
 }
 
-export default function GoalsDisplay({ goals }: GoalsDisplayProps) {
+export default function GoalsDisplay({ goals, sessionId }: GoalsDisplayProps) {
+  const [selectedGoal, setSelectedGoal] = useState<IGoal | null>(null);
+  const [quizDialogOpen, setQuizDialogOpen] = useState(false);
+
+  const handleStartQuiz = (goal: IGoal) => {
+    setSelectedGoal(goal);
+    setQuizDialogOpen(true);
+  };
   const getSkillLevelColor = (level: string) => {
     switch (level.toLowerCase()) {
       case "beginner":
@@ -23,8 +34,10 @@ export default function GoalsDisplay({ goals }: GoalsDisplayProps) {
   };
 
   const getPriorityColor = (priority: number) => {
-    if (priority <= 2) return "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300";
-    if (priority <= 4) return "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300";
+    if (priority <= 2)
+      return "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300";
+    if (priority <= 4)
+      return "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300";
     return "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300";
   };
 
@@ -65,17 +78,25 @@ export default function GoalsDisplay({ goals }: GoalsDisplayProps) {
                     <Badge variant="outline" className="text-xs">
                       Goal {goal.goal_number}
                     </Badge>
-                    <Badge className={`text-xs ${getSkillLevelColor(goal.skill_level)}`}>
+                    <Badge
+                      className={`text-xs ${getSkillLevelColor(
+                        goal.skill_level
+                      )}`}
+                    >
                       {goal.skill_level}
                     </Badge>
-                    <Badge className={`text-xs ${getPriorityColor(goal.priority)}`}>
+                    <Badge
+                      className={`text-xs ${getPriorityColor(goal.priority)}`}
+                    >
                       {getPriorityLabel(goal.priority)} Priority
                     </Badge>
                   </div>
                   <h4 className="text-lg font-semibold mb-2">{goal.title}</h4>
-                  <p className="text-muted-foreground text-sm mb-4">{goal.description}</p>
+                  <p className="text-muted-foreground text-sm mb-4">
+                    {goal.description}
+                  </p>
                 </div>
-                
+
                 <div className="flex items-center ml-4">
                   {goal.completion_percentage >= 100 ? (
                     <CheckCircle className="w-6 h-6 text-green-500" />
@@ -108,23 +129,60 @@ export default function GoalsDisplay({ goals }: GoalsDisplayProps) {
                 </div>
               </div>
 
-              {/* Materials */}
-              {goal.materials && goal.materials.length > 0 && (
-                <div className="flex items-center justify-between">
-                  <div className="text-sm text-muted-foreground">
-                    {goal.materials.length} learning material{goal.materials.length !== 1 ? 's' : ''}
-                    {goal.materials.filter(m => m.is_completed).length > 0 && (
-                      <span className="ml-2">
-                        ({goal.materials.filter(m => m.is_completed).length} completed)
-                      </span>
-                    )}
-                  </div>
-                  <MaterialsDialog materials={goal.materials} goalTitle={goal.title} />
+              {/* Actions */}
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-4">
+                  {/* Materials */}
+                  {goal.materials && goal.materials.length > 0 && (
+                    <div className="text-sm text-muted-foreground">
+                      {goal.materials.length} learning material
+                      {goal.materials.length !== 1 ? "s" : ""}
+                      {goal.materials.filter((m) => m.is_completed).length >
+                        0 && (
+                        <span className="ml-2">
+                          ({goal.materials.filter((m) => m.is_completed).length}{" "}
+                          completed)
+                        </span>
+                      )}
+                    </div>
+                  )}
                 </div>
-              )}
+
+                <div className="flex items-center gap-2">
+                  {goal.materials && goal.materials.length > 0 && (
+                    <MaterialsDialog
+                      materials={goal.materials}
+                      goalTitle={goal.title}
+                    />
+                  )}
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleStartQuiz(goal)}
+                    className="flex items-center gap-2"
+                  >
+                    <Brain className="h-4 w-4" />
+                    Take Quiz
+                  </Button>
+                </div>
+              </div>
             </div>
           ))}
       </div>
+
+      {selectedGoal && (
+        <QuizDialog
+          open={quizDialogOpen && !!selectedGoal}
+          onOpenChange={(open) => {
+            setQuizDialogOpen(open);
+            if (!open) {
+              setSelectedGoal(null);
+            }
+          }}
+          sessionId={sessionId}
+          goal={selectedGoal!}
+        />
+      )}
     </div>
   );
 }
