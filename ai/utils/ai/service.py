@@ -119,7 +119,7 @@ class AIService:
                 status = "✓ Completed" if goal.is_completed else "○ Not started"
                 context_info += f"\n  * Goal ID {goal.id}: {goal.title} [{status}]"
         else:
-            context_info += "\n- No roadmap exists yet. You must create one first."
+            context_info += "\n- No roadmap exists yet."
         
         # Load master prompt
         prompt = Prompt('master', {

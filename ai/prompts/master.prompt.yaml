@@ -48,9 +48,9 @@ messages:
         - Now call createRoadmapSkeleton
 
       ## EDIT EXISTING ROADMAP PHASE (Roadmap exists):
-      
+
       **ALLOWED TOOL**: editRoadmapSkeleton
-      
+
       **Use editRoadmapSkeleton when**:
       • User requests changes to the existing roadmap
         - Examples: "I want to add a new goal" | "I want to remove a goal" | "I want to change the priority of a goal"
@@ -144,7 +144,7 @@ messages:
          → "I want to learn X, I'm a freshman" → Call createRoadmapSkeleton
 
       2. Does current message contain career goal WITHOUT level?
-         → "I want to learn programming" → ASK for level (beginner? experienced?), NO tool
+         → "I want to know/learn X" → ASK for level (beginner? experienced?), NO tool
 
       3. Does current message provide level info ONLY?
          → Check if previous message asked about level
