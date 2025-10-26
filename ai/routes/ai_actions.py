@@ -816,38 +816,6 @@ def _execute_tool_call_sync(
                 'message': f'Successfully created learning materials: {material_response.title}'
             }
     
-    elif tool_name == 'createQuizForGoal':
-        # Get goal_id from arguments
-        goal_id = arguments.get('goal_id')
-        if not goal_id:
-            raise ValueError("goal_id is required for createQuizForGoal")
-        
-        # Execute quiz creation using AI service
-        quiz_response = ai_service.execute_quiz_creation(
-            goal_id=goal_id,
-            session_id=session_id,
-            db=db
-        )
-        
-        # Save tool execution to message history
-        add_message_to_session(
-            db=db,
-            session_id=session_id,
-            role=MessageRole.ASSISTANT.value,
-            content=f"Created quiz with {len(quiz_response.quiz)} questions",
-            metadata={
-                'tool': 'createQuizForGoal',
-                'goal_id': goal_id,
-                'quiz_questions': len(quiz_response.quiz)
-            }
-        )
-        
-        return {
-            'success': True,
-            'operation': 'createQuizForGoal',
-            'data': quiz_response.dict(),
-            'message': f'Successfully created quiz with {len(quiz_response.quiz)} questions'
-        }
     elif tool_name == 'editRoadmapSkeleton':
         # Execute roadmap skeleton editing
         roadmap_response = ai_service.execute_roadmap_skeleton_editing(
