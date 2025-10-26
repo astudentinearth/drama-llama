@@ -1,0 +1,77 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:16-alpine
+    container_name: dramallama_postgres
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres_password}
+      POSTGRES_DB: dramallama_ai
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - dramallama_network
+
+  # AI Service (FastAPI)
+  ai_service:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: dramallama_ai
+    environment:
+      # Ollama Configuration
+      OLLAMA_HOST: ${OLLAMA_HOST:-https://om1jbzfj7kcij0-11434.proxy.runpod.net/}
+      OLLAMA_MODEL: ${OLLAMA_MODEL:-llama3.1:8b}
+      OLLAMA_TIMEOUT: ${OLLAMA_TIMEOUT:-300}
+      OLLAMA_MAX_TOKENS: ${OLLAMA_MAX_TOKENS:-4096}
+      
+      # GROQ API
+      GROQ_API_KEY: ${GROQ_API_KEY}
+      GROQ_MODEL: ${GROQ_MODEL:-meta-llama/llama-4-maverick-17b-128e-instruct}
+      GROQ_MAX_TOKENS: ${GROQ_MAX_TOKENS:-4096}
+      GROQ_TEMPERATURE: ${GROQ_TEMPERATURE:-0.1}
+      GROQ_TIMEOUT: ${GROQ_TIMEOUT:-60}
+      
+      # API Configuration
+      API_HOST: 0.0.0.0
+      API_PORT: 8000
+      API_RELOAD: ${API_RELOAD:-False}
+      
+      # Security
+      API_KEY_SECRET: ${API_KEY_SECRET:-your-secret-key-here}
+      
+      # Logging
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
+      
+      # Database (connect to postgres service)
+      AI_DATABASE_URL: postgresql://postgres:${POSTGRES_PASSWORD:-postgres_password}@postgres:5432/dramallama_ai
+    ports:
+      - "8001:8001"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      # Mount prompts directory for easy updates
+      - ./prompts:/app/prompts
+      # Uncomment the line below for development with hot reload
+      # - .:/app
+    networks:
+      - dramallama_network
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+    driver: local
+
+networks:
+  dramallama_network:
+    driver: bridge
