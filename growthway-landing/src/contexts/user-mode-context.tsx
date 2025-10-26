@@ -1,5 +1,5 @@
 // UserModeContext that provides if the current state is business or individual
-import { createContext, useState, useContext, useEffect } from 'react';
+import { createContext, useState, useContext} from 'react';
 import type { ReactNode } from 'react';
 
 type UserMode = 'business' | 'individual';
