@@ -9,7 +9,7 @@ import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 
 export default function Router() {
   return (
-    <BrowserRouter>
+    <BrowserRouter basename="/">
       <Routes>
         <Route path="/" element={<Layout />}>
           <Route index element={<Navigate to={"/roadmaps"} />} />
