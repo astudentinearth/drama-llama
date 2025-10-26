@@ -23,10 +23,10 @@ response_format:
               options:
                 type: "array"
                 description: "Array of multiple choice options (A, B, C, D)"
-                items:
-                  type: "string"
                 minItems: 4
                 maxItems: 4
+                items:
+                  type: "string"
               correctAnswer:
                 type: "string"
                 description: "The correct answer option (A, B, C, or D)"
