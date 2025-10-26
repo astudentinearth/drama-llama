@@ -17,7 +17,7 @@ mvn clean package -DskipTests
 
 cd $SCRIPT_DIR
 
-cd growthway-landing
+cd groowy-landing
 bun install
 bun run build
 
@@ -28,7 +28,7 @@ mkdir -pv dist/static
 mkdir -pv dist/ai
 
 cp -v backend/target/backend*.jar dist/backend.jar
-cp -vr growthway-landing/dist/ "dist/static"
+cp -vr groowy-landing/dist/ "dist/static"
 cp -vr frontend/dist/ "dist/static$VITE_BASE"
 cp -vr ai/* dist/ai
 cp nginx.conf dist/nginx.conf
