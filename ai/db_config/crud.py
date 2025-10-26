@@ -1470,6 +1470,8 @@ def submit_quiz_attempt(
         time_delta = attempt.completed_at - attempt.started_at
         attempt.time_spent_minutes = int(time_delta.total_seconds() / 60)
     
+    if attempt.passed:
+        mark_goal_completed(db, quiz.goal_id)
     db.commit()
     db.refresh(attempt)
     return attempt
