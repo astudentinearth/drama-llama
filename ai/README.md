@@ -182,7 +182,7 @@ GROQ_TIMEOUT=60
 
 # API Settings
 API_HOST=0.0.0.0
-API_PORT=8001
+API_PORT=8000
 API_RELOAD=True
 LOG_LEVEL=INFO
 ```
@@ -205,17 +205,17 @@ The application automatically creates tables on first run. You can also trigger 
 
 ```bash
 # Start the server
-uvicorn main:app --host 0.0.0.0 --port 8001 --reload
+uvicorn main:app --host 0.0.0.0 --port 8000 --reload
 
 # Hit the health endpoint to initialize
-curl http://localhost:8001/health
+curl http://localhost:8000/health
 ```
 
 #### 7. Verify Installation
 
 ```bash
 # Check health endpoint
-curl http://localhost:8001/health
+curl http://localhost:8000/health
 
 # Expected response:
 # {"status":"ok","database":"connected","error":null}
@@ -225,8 +225,8 @@ curl http://localhost:8001/health
 
 Open your browser:
 
-- **Swagger UI**: http://localhost:8001/docs
-- **ReDoc**: http://localhost:8001/redoc
+- **Swagger UI**: http://localhost:8000/docs
+- **ReDoc**: http://localhost:8000/redoc
 
 ---
 
@@ -257,7 +257,7 @@ docker-compose down
 #### 3. Verify
 
 ```bash
-curl http://localhost:8001/health
+curl http://localhost:8000/health
 ```
 
 For detailed Docker instructions, see [README.docker.md](./README.docker.md).
@@ -344,7 +344,7 @@ ai/
 | `GROQ_TIMEOUT`        | `60`                                            | Request timeout (seconds)    |
 | **API Settings**      |                                                 |                              |
 | `API_HOST`            | `0.0.0.0`                                       | Server bind address          |
-| `API_PORT`            | `8001`                                          | Server port                  |
+| `API_PORT`            | `8000`                                          | Server port                  |
 | `API_RELOAD`          | `True`                                          | Auto-reload on code changes  |
 | `API_KEY_SECRET`      | `dev-secret-key`                                | API authentication secret    |
 | `CORS_ORIGINS`        | `http://localhost:5173`                         | Allowed CORS origins         |
@@ -376,7 +376,7 @@ Only certain models support JSON schema structured outputs:
 All endpoints (except `/health`) require API key authentication:
 
 ```bash
-curl -H "X-API-Key: your-secret-key-here" http://localhost:8001/ai/sessions
+curl -H "X-API-Key: your-secret-key-here" http://localhost:8000/ai/sessions
 ```
 
 ### Core Endpoints
@@ -456,8 +456,8 @@ Content-Type: application/json
 
 ### Interactive API Docs
 
-- **Swagger UI**: http://localhost:8001/docs
-- **ReDoc**: http://localhost:8001/redoc
+- **Swagger UI**: http://localhost:8000/docs
+- **ReDoc**: http://localhost:8000/redoc
 
 ---
 
@@ -500,13 +500,13 @@ sessions (1) ─────< (M) messages
 **Initialize tables:**
 
 ```bash
-curl http://localhost:8001/health
+curl http://localhost:8000/health
 ```
 
 **Reset database (DANGER):**
 
 ```bash
-curl http://localhost:8001/drop_db
+curl http://localhost:8000/drop_db
 ```
 
 **Direct database access:**
@@ -605,7 +605,7 @@ This ensures type-safe, predictable AI outputs.
 source venv/bin/activate
 
 # Run with auto-reload
-uvicorn main:app --host 0.0.0.0 --port 8001 --reload
+uvicorn main:app --host 0.0.0.0 --port 8000 --reload
 
 # Or use the configured settings
 python -c "from config import settings; import uvicorn; uvicorn.run('main:app', host=settings.api_host, port=settings.api_port, reload=settings.api_reload)"
@@ -765,7 +765,7 @@ docker build -t dramallama-ai:latest .
 # Run with production settings
 docker run -d \
   --name dramallama-ai \
-  -p 8001:8001 \
+  -p 8000:8000 \
   --env-file .env.production \
   dramallama-ai:latest
 ```
@@ -786,7 +786,7 @@ server {
     server_name api.yourdomain.com;
 
     location / {
-        proxy_pass http://localhost:8001;
+        proxy_pass http://localhost:8000;
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
@@ -846,8 +846,8 @@ server {
 **Solutions**:
 
 ```bash
-# Find process using port 8001
-lsof -i :8001
+# Find process using port 8000
+lsof -i :8000
 
 # Kill process
 kill -9 <PID>
@@ -886,7 +886,7 @@ Then check logs for detailed stack traces.
 
 ```bash
 # Check service health
-curl http://localhost:8001/health
+curl http://localhost:8000/health
 
 # Check database directly
 docker-compose exec postgres psql -U postgres -d dramallama_ai -c "SELECT COUNT(*) FROM sessions;"
@@ -940,7 +940,7 @@ This project is part of the Drama Llama platform. See the main repository for li
 
 - **Repository**: https://github.com/astudentinearth/drama-llama
 - **Issues**: https://github.com/astudentinearth/drama-llama/issues
-- **Documentation**: http://localhost:8001/docs (when running)
+- **Documentation**: http://localhost:8000/docs (when running)
 
 ---
 
