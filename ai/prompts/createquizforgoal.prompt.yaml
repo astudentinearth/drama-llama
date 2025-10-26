@@ -22,9 +22,7 @@ response_format:
                 description: "The quiz question text"
               options:
                 type: "array"
-                description: "Array of multiple choice options (A, B, C, D)"
-                minItems: 4
-                maxItems: 4
+                description: "Array of multiple choice options (A, B, C, D), should be exactly 4 options"
                 items:
                   type: "string"
               correctAnswer:
