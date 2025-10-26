@@ -6,10 +6,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from config import settings
 from routes import cache_router
 from services import embedding_service, qdrant_service
-from ..ai.db_config.database import init_db
 
-# Initialize database (create all tables)
-init_db()
+
 # Configure logging
 logging.basicConfig(
     level=getattr(logging, settings.log_level.upper()),

@@ -190,6 +190,11 @@ QDRANT_HOST=localhost
 QDRANT_PORT=6333
 QDRANT_COLLECTION=learning_materials
 
+# Leave empty for local development (no authentication required)
+# Required for Qdrant Cloud deployments or self-hosted instances with API key authentication
+QDRANT_API_KEY=
+QDRANT_URL=
+
 # Models
 EMBEDDING_MODEL=sentence-transformers/all-MiniLM-L6-v2
 TOKENIZER_MODEL=meta-llama/Llama-4-Scout-17b-16e-instruct

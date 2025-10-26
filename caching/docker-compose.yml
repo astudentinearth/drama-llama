@@ -1,0 +1,50 @@
+version: '3.8'
+
+services:
+  caching-service:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: drama-llama-caching
+    ports:
+      - "8002:8002"
+    environment:
+      - QDRANT_PORT=6333
+      - QDRANT_COLLECTION=learning_materials
+      - QDRANT_API_KEY=${QDRANT_API_KEY}
+      - QDRANT_URL=${QDRANT_URL}
+      - QDRANT_USE_HTTPS=${QDRANT_USE_HTTPS}
+      - API_HOST=0.0.0.0
+      - API_PORT=8002
+      - LOG_LEVEL=INFO
+      - SIMILARITY_THRESHOLD=0.85
+      - MAX_SEARCH_RESULTS=10
+      - EMBEDDING_MODEL=sentence-transformers/all-MiniLM-L6-v2
+      - VECTOR_SIZE=384
+    volumes:
+      - ./qdrant-data:/app/qdrant-data
+      - ./models-cache:/app/models-cache
+    depends_on:
+      - qdrant
+    restart: unless-stopped
+    networks:
+      - drama-llama-network
+
+  qdrant:
+    image: qdrant/qdrant:latest
+    container_name: drama-llama-qdrant
+    ports:
+      - "6333:6333"
+      - "6334:6334"
+    volumes:
+      - ./qdrant-data:/qdrant/storage
+    environment:
+      - QDRANT__SERVICE__HTTP_PORT=6333
+      - QDRANT__SERVICE__GRPC_PORT=6334
+    restart: unless-stopped
+    networks:
+      - drama-llama-network
+
+networks:
+  drama-llama-network:
+    driver: bridge
