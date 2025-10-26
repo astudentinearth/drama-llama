@@ -2,7 +2,45 @@
 import { AnimatedTooltip } from "./ui/animated-tooltip";
 import { useUserMode } from "../contexts/user-mode-context";
 
-const people = [
+const individuals = [
+    {
+        id: 1,
+        name: "Emma Wilson",
+        designation: "Computer Science Student",
+        image:
+            "https://images.unsplash.com/photo-1580489944761-15a19d654956?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8NXx8YXZhdGFyfGVufDB8fDB8fHww&auto=format&fit=crop&w=800&q=60",
+    },
+    {
+        id: 2,
+        name: "Alex Chen",
+        designation: "Marketing Intern",
+        image:
+            "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=3540&q=80",
+    },
+    {
+        id: 3,
+        name: "Sofia Garcia",
+        designation: "Design Student",
+        image:
+            "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MTB8fGF2YXRhcnxlbnwwfHwwfHx8MA%3D%3D&auto=format&fit=crop&w=800&q=60",
+    },
+    {
+        id: 4,
+        name: "Marcus Johnson",
+        designation: "Software Engineering Intern",
+        image:
+            "https://images.unsplash.com/photo-1599566150163-29194dcaad36?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=3387&q=80",
+    },
+    {
+        id: 5,
+        name: "Lily Park",
+        designation: "Business Administration Student",
+        image:
+            "https://images.unsplash.com/photo-1544725176-7c40e5a71c5e?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=3534&q=80",
+    },
+];
+
+const companies = [
     {
         id: 1,
         name: "Sarah Mitchell",
@@ -42,6 +80,7 @@ const people = [
 
 export default function RoadmapCTA() {
     const { userMode } = useUserMode();
+    const people = userMode === "individual" ? individuals : companies;
 
     return (
         <div className="w-full bg-black rounded-3xl shadow-2xl overflow-hidden">
