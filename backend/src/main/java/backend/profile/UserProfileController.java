@@ -5,10 +5,11 @@ import backend.profile.dto.UpdateProfileDTO;
 import backend.profile.dto.UserProfileDTO;
 import backend.profile.dto.UserProfileResponseDTO;
 import backend.profile.mapper.CvMapper;
+import backend.roadmap.dto.SummarizeCvDTO;
 import lombok.AllArgsConstructor;
-import org.modelmapper.ModelMapper;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import reactor.core.publisher.Mono;
 
 import java.util.UUID;
 
@@ -37,5 +38,12 @@ public class UserProfileController {
         var cvs = userProfileService.getUserCvs(userId);
         var dtos = cvs.stream().map(cvMapper::toDTO).toList();
         return ResponseEntity.ok(new GetCVsResponseDTO(dtos));
+    }
+
+    @PostMapping("/{userId}/ai/sessions/{sessionId}/summarize-cv")
+    public Mono<ResponseEntity<byte[]>> summarizeCv(@PathVariable UUID userId,
+                                                    @PathVariable String sessionId,
+                                                    @RequestBody SummarizeCvDTO dto) {
+        return userProfileService.summarizeCv(userId, sessionId, dto);
     }
 }

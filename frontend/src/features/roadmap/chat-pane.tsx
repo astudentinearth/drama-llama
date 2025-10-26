@@ -143,48 +143,58 @@ export default function ChatPane({ sessionId }: ChatPaneProps) {
   useEffect(() => {
     if (currentMessage && messages.length > 0) {
       const lastMessage = messages[messages.length - 1];
+      console.log("current", currentMessage);
+      console.log("last", lastMessage);
       if (lastMessage.role === "assistant" && lastMessage.isStreaming) {
-        // Parse SSE format: event:type\ndata:json
-        const lines = currentMessage.split("\n").filter((line) => line.trim());
+        // Parse SSE format: handle both newline-separated and concatenated events
         let accumulatedContent = "";
         let toolCalls: any[] = [];
         let toolResults: any[] = [];
 
-        let currentEvent = "";
-        for (const line of lines) {
-          if (line.startsWith("event:")) {
-            currentEvent = line.substring(6).trim();
-          } else if (line.startsWith("data:")) {
-            const dataContent = line.substring(5).trim();
+        // Split by 'event:' to separate different events
+        const eventBlocks = currentMessage
+          .split(/(?=event:)/)
+          .filter((block) => block.trim());
 
-            try {
-              const parsed = JSON.parse(dataContent);
+        for (const block of eventBlocks) {
+          const lines = block.split(/\r?\n/).filter((line) => line.trim());
+          let currentEvent = "";
 
-              if (currentEvent === "master_prompt" || currentEvent === "") {
-                if (parsed.response) {
-                  accumulatedContent += parsed.response;
-                }
+          for (const line of lines) {
+            if (line.startsWith("event:")) {
+              currentEvent = line.substring(6).trim();
+            } else if (line.startsWith("data:")) {
+              const dataContent = line.substring(5).trim();
 
-                if (parsed.tool_calls && parsed.tool_calls.length > 0) {
-                  toolCalls = [...toolCalls, ...parsed.tool_calls];
+              try {
+                const parsed = JSON.parse(dataContent);
+
+                if (currentEvent === "master_prompt" || currentEvent === "") {
+                  if (parsed.response) {
+                    accumulatedContent += parsed.response;
+                  }
+
+                  if (parsed.tool_calls && parsed.tool_calls.length > 0) {
+                    toolCalls = [...toolCalls, ...parsed.tool_calls];
+                  }
+                } else if (currentEvent === "learning_materials") {
+                  if (parsed.operation && parsed.success !== undefined) {
+                    toolResults.push({
+                      operation: parsed.operation,
+                      success: parsed.success,
+                      message: parsed.message,
+                      data: parsed.data,
+                    });
+                  }
+                } else if (currentEvent === "done") {
+                  // Handle completion message if needed
+                  console.log("Stream completed:", parsed.message);
                 }
-              } else if (currentEvent === "learning_materials") {
-                if (parsed.operation && parsed.success !== undefined) {
-                  toolResults.push({
-                    operation: parsed.operation,
-                    success: parsed.success,
-                    message: parsed.message,
-                    data: parsed.data,
-                  });
+              } catch (e) {
+                // If not JSON, treat as plain text
+                if (dataContent && dataContent !== "") {
+                  accumulatedContent += dataContent;
                 }
-              } else if (currentEvent === "done") {
-                // Handle completion message if needed
-                console.log("Stream completed:", parsed.message);
-              }
-            } catch (e) {
-              // If not JSON, treat as plain text
-              if (dataContent && dataContent !== "") {
-                accumulatedContent += dataContent;
               }
             }
           }
@@ -347,17 +357,19 @@ export default function ChatPane({ sessionId }: ChatPaneProps) {
                     : "bg-muted"
                 }`}
               >
-                {message.content && (
+                {message.content ? (
                   <div className="prose prose-sm max-w-none dark:prose-invert">
                     <ReactMarkdown remarkPlugins={[remarkGfm]}>
                       {message.content}
                     </ReactMarkdown>
                   </div>
-                )}
-
-                {message.isStreaming && (
-                  <div className="flex items-center gap-2 animate-pulse mt-2 text-sm text-muted-foreground">
+                ) : message.isStreaming ? (
+                  <div className="flex items-center gap-2 animate-pulse text-sm text-muted-foreground">
                     <span>Working on it...</span>
+                  </div>
+                ) : (
+                  <div className="text-sm text-muted-foreground italic">
+                    No content received
                   </div>
                 )}
 

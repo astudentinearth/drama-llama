@@ -168,4 +168,19 @@ public class RoadmapProxyController {
                 .bodyToFlux(new ParameterizedTypeReference<ServerSentEvent<String>>() {
                 });
     }
+
+    @PostMapping("/ai/graduation-project/{sessionId}/generate-questions")
+    public Mono<ResponseEntity<byte[]>> generateQuestions(@PathVariable("sessionId") String sessionId) {
+        return proxyPost("/ai/graduation-project/{session_id}/generate-questions", Map.of("session_id", sessionId), null, new HttpHeaders());
+    }
+
+    @GetMapping("/ai/graduation-project/{sessionId}/questions")
+    public Mono<ResponseEntity<byte[]>> getQuestions(@PathVariable("sessionId") String sessionId) {
+        return proxyGet("/ai/graduation-project/{session_id}/questions", Map.of("session_id", sessionId));
+    }
+
+    @GetMapping("/ai/graduation-project/{sessionId}/submissions")
+    public Mono<ResponseEntity<byte[]>> getSubmissions(@PathVariable("sessionId") String sessionId) {
+        return proxyGet("/ai/graduation-project/{session_id}/submissions", Map.of("session_id", sessionId));
+    }
 }

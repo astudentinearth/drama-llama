@@ -81,25 +81,16 @@ export function Session(id: number) {
           }
 
           buffer += decoder.decode(value, { stream: true });
-          const lines = buffer.split("\n");
-          buffer = lines.pop() || ""; // Keep incomplete line in buffer
-
-          for (const line of lines) {
-            if (line.trim() === "") continue;
-
-            // Handle SSE format: "data: {content}" or just plain content
-            let data = line;
-            if (line.startsWith("data: ")) {
-              data = line.slice(6);
-            }
-
-            // Skip SSE control messages
-            if (data.trim() === "[DONE]" || data.trim() === "") {
-              continue;
-            }
-
-            if (data.trim()) {
-              onMessage(data.trim());
+          
+          // Pass the raw buffer to the message handler
+          // Let the frontend handle the SSE parsing since the format is non-standard
+          if (buffer.trim()) {
+            onMessage(buffer);
+            // Don't clear buffer completely, but reset it to avoid infinite growth
+            // Keep only the last part in case it's incomplete
+            const lastEventIndex = buffer.lastIndexOf('event:');
+            if (lastEventIndex > 0) {
+              buffer = buffer.substring(lastEventIndex);
             }
           }
         }

@@ -1,19 +1,39 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { useJobQuery } from "./jobs.query";
+import { useJobQuery, useJobApplicationsQuery } from "./jobs.query";
 import { useCreateSessionMutation } from "../roadmap/roadmap.query";
+import { useAuth } from "../auth/auth.query";
 import { Session } from "../roadmap/roadmap.api";
+import ApplyJobDialog from "./apply-job-dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, GraduationCap, Loader2, Building } from "lucide-react";
+import { ArrowLeft, GraduationCap, Loader2, Building, Clock } from "lucide-react";
 
 export default function JobDetailPage() {
   const { jobId } = useParams<{ jobId: string }>();
   const navigate = useNavigate();
   const [isCreatingSession, setIsCreatingSession] = useState(false);
+  const [hasAppliedLocally, setHasAppliedLocally] = useState(false);
   
   const { data: job, isLoading, error } = useJobQuery(jobId!);
+  const { data: currentUser } = useAuth();
+  const { data: applications } = useJobApplicationsQuery(jobId!);
   const createSessionMutation = useCreateSessionMutation();
+
+  // Check if user has already applied (either from server or locally)
+  const hasApplied = useMemo(() => {
+    if (hasAppliedLocally) return true;
+    
+    if (applications && currentUser) {
+      return applications.applications.some(app => app.userId === currentUser.id);
+    }
+    
+    return false;
+  }, [hasAppliedLocally, applications, currentUser]);
+
+  const handleApplicationSubmitted = () => {
+    setHasAppliedLocally(true);
+  };
 
   const handleStartLearningSession = async () => {
     if (!job) return;
@@ -131,24 +151,40 @@ ${job.content}
               </div>
             </div>
             
-            <Button
-              onClick={handleStartLearningSession}
-              disabled={isCreatingSession || !job.active}
-              size="lg"
-              className="ml-4"
-            >
-              {isCreatingSession ? (
-                <>
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  Creating Session...
-                </>
+            <div className="flex gap-3 ml-4">
+              {hasApplied ? (
+                <Button
+                  variant="secondary"
+                  size="lg"
+                  disabled
+                  className="bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400"
+                >
+                  <Clock className="w-4 h-4 mr-2" />
+                  Pending
+                </Button>
               ) : (
-                <>
-                  <GraduationCap className="w-4 h-4 mr-2" />
-                  Start Learning Session
-                </>
+                <ApplyJobDialog job={job} onApplicationSubmitted={handleApplicationSubmitted} />
               )}
-            </Button>
+              
+              <Button
+                onClick={handleStartLearningSession}
+                disabled={isCreatingSession || !job.active}
+                size="lg"
+                variant="outline"
+              >
+                {isCreatingSession ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Creating Session...
+                  </>
+                ) : (
+                  <>
+                    <GraduationCap className="w-4 h-4 mr-2" />
+                    Start Learning Session
+                  </>
+                )}
+              </Button>
+            </div>
           </div>
         </div>
 
@@ -174,8 +210,45 @@ ${job.content}
           </div>
         )}
 
+        {/* Apply Section */}
+        <div className="mt-8 bg-linear-to-r from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 rounded-lg p-6 border">
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 bg-green-100 dark:bg-green-900/40 rounded-lg flex items-center justify-center">
+              {hasApplied ? (
+                <Clock className="w-6 h-6 text-green-600 dark:text-green-400" />
+              ) : (
+                <Building className="w-6 h-6 text-green-600 dark:text-green-400" />
+              )}
+            </div>
+            <div className="flex-1">
+              <h3 className="text-lg font-semibold mb-1">
+                {hasApplied ? "Application Submitted" : "Apply for This Position"}
+              </h3>
+              <p className="text-muted-foreground text-sm">
+                {hasApplied 
+                  ? "Your application has been submitted successfully. The employer will review it and get back to you."
+                  : "Submit your application for this position. You can include an optional cover letter to stand out."
+                }
+              </p>
+            </div>
+            {hasApplied ? (
+              <Button
+                variant="secondary"
+                size="lg"
+                disabled
+                className="bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400"
+              >
+                <Clock className="w-4 h-4 mr-2" />
+                Pending
+              </Button>
+            ) : (
+              <ApplyJobDialog job={job} onApplicationSubmitted={handleApplicationSubmitted} />
+            )}
+          </div>
+        </div>
+
         {/* Learning Session CTA */}
-        <div className="mt-8 bg-linear-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-lg p-6 border">
+        <div className="mt-6 bg-linear-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-lg p-6 border">
           <div className="flex items-center gap-4">
             <div className="w-12 h-12 bg-blue-100 dark:bg-blue-900/40 rounded-lg flex items-center justify-center">
               <GraduationCap className="w-6 h-6 text-blue-600 dark:text-blue-400" />
@@ -191,6 +264,7 @@ ${job.content}
               onClick={handleStartLearningSession}
               disabled={isCreatingSession || !job.active}
               size="lg"
+              variant="outline"
             >
               {isCreatingSession ? (
                 <>

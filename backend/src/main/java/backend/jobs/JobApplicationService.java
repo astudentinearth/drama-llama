@@ -50,12 +50,8 @@ public class JobApplicationService {
                 });
     }
 
-    @Secured("ROLE_RECRUITER")
     @Transactional(readOnly = true)
     public List<JobApplication> listApplications(UUID jobId) {
-        User user = authContext.getCurrentUser();
-        JobListing listing = jobListingRepository.findById(jobId).orElseThrow(() -> new NotFoundException(JobListing.class));
-        if (!listing.getUser().is(user)) throw new UnauthorizedException();
         return jobApplicationRepository.findAllByJobListingId(jobId);
     }
 

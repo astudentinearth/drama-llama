@@ -15,7 +15,7 @@ interface JobsCardProps {
 export default function JobsCard({ job }: JobsCardProps) {
   return (
     <Link to={`/jobs/${job.id}`}>
-      <Card className="h-full rounded-3xl hover:bg-card/50 cursor-pointer transition-colors">
+      <Card className="h-full rounded-3xl hover:bg-card/50 cursor-pointer transition-colorscolors">
         <CardHeader>
           <CardTitle className="text-lg">{job.title}</CardTitle>
           <CardDescription className="text-sm text-muted-foreground">

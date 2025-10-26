@@ -37,4 +37,7 @@ public class UserProfile {
     )
     @Column(name = "skill_name")
     private List<String> skills;
+
+    @Column(columnDefinition = "text")
+    private String cvSummary;
 }
