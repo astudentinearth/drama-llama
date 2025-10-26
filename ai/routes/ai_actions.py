@@ -904,7 +904,8 @@ async def create_quiz_endpoint(
                 'question_text': question.question,
                 'options': question.options,
                 'correct_answer': question.correctAnswer,
-                'points': 1
+                'points': 1,
+                'explanation': question.explanation
             })
 
         quiz = create_quiz(
