@@ -275,6 +275,7 @@ class QuizQuestion(BaseModel):
     question: str = Field(..., description="The quiz question text")
     options: List[str] = Field(..., description="Array of multiple choice options (A, B, C, D)")
     correctAnswer: str = Field(..., description="The correct answer option (A, B, C, or D)")
+    explanation: str = Field(..., description="Brief explanation of why the correct answer is right")
 
 class QuizForGoalResponse(BaseModel):
     """Response from createQuizForGoal tool."""
@@ -313,20 +314,14 @@ class QuizQuestionResponse(BaseModel):
 class QuizCreate(BaseModel):
     """Request to create a quiz."""
     goal_id: int = Field(..., description="Associated roadmap goal ID")
-    title: str = Field(..., description="Quiz title")
-    description: Optional[str] = Field(None, description="Quiz description")
-    difficulty_level: Optional[SkillLevel] = Field(SkillLevel.BEGINNER, description="Quiz difficulty level")
     time_limit_minutes: Optional[int] = Field(None, ge=1, description="Time limit in minutes")
     passing_score_percentage: float = Field(70.0, ge=0.0, le=100.0, description="Passing score percentage")
     max_attempts: int = Field(3, ge=1, description="Maximum attempts allowed")
-    questions: List[QuizQuestionCreate] = Field(..., min_items=1, description="Quiz questions")
-
 
 class QuizUpdate(BaseModel):
     """Request to update a quiz."""
     title: Optional[str] = None
     description: Optional[str] = None
-    difficulty_level: Optional[SkillLevel] = None
     time_limit_minutes: Optional[int] = Field(None, ge=1)
     passing_score_percentage: Optional[float] = Field(None, ge=0.0, le=100.0)
     max_attempts: Optional[int] = Field(None, ge=1)
@@ -339,7 +334,6 @@ class QuizResponse(BaseModel):
     goal_id: int
     title: str
     description: Optional[str]
-    difficulty_level: str
     time_limit_minutes: Optional[int]
     passing_score_percentage: float
     max_attempts: int
